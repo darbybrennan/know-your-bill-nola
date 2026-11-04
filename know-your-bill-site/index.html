@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Know Your Bill NOLA: look up a New Orleans property, see its 2026 value and estimated tax bill, and get sourced answers about exemptions and appeals. Student prototype.">
+<title>Know Your Bill NOLA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;700&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0}
+img{max-width:100%}
+[hidden]{display:none!important}
+
+/* Layout: one civic column — tile-sign masthead, always-on prototype notice, chat, then contacts. Street-tile blue on cool paper. */
+:root{
+  --bg:#f5f7fa; --surface:#ffffff; --ink:#16202e; --muted:#5b6778; --line:#d9e0ea;
+  --tile:#1d4f91; --tile-ink:#ffffff; --accent-soft:#e6eef9; --warn-bg:#fff4dc; --warn-ink:#6b4b00;
+  --you:#1d4f91; --you-ink:#ffffff;
+  --display:"Zilla Slab", Rockwell, Georgia, serif;
+  --body:"Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f141c; --surface:#171e29; --ink:#e7edf5; --muted:#9aa7b9; --line:#2a3443;
+  --tile:#6f9ee0; --tile-ink:#0b1420; --accent-soft:#1c2a3e; --warn-bg:#3a2e12; --warn-ink:#f3d58e;
+  --you:#2f5e9f; --you-ink:#ffffff; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0f141c; --surface:#171e29; --ink:#e7edf5; --muted:#9aa7b9; --line:#2a3443;
+  --tile:#6f9ee0; --tile-ink:#0b1420; --accent-soft:#1c2a3e; --warn-bg:#3a2e12; --warn-ink:#f3d58e;
+  --you:#2f5e9f; --you-ink:#ffffff; color-scheme:dark }
+html.big{font-size:118.75%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:1rem;line-height:1.55}
+.wrap{max-width:760px;margin:0 auto;padding-block:20px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:18px}
+header{display:flex;flex-direction:column;gap:10px}
+.tile{align-self:flex-start;background:var(--tile);color:var(--tile-ink);border:3px solid var(--tile);outline:2px solid var(--tile-ink);outline-offset:-7px;padding:12px 22px;border-radius:4px}
+.tile h1{margin:0;font-family:var(--display);font-weight:700;font-size:clamp(1.6rem,5vw,2.2rem);letter-spacing:.02em;text-transform:uppercase;line-height:1.05}
+.lede{margin:0;color:var(--muted);max-width:60ch}
+.notice{background:var(--warn-bg);color:var(--warn-ink);border-radius:8px;padding:10px 14px;font-size:.88rem}
+.notice strong{font-weight:700}
+.decisions{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media (max-width:560px){.decisions{grid-template-columns:1fr}}
+.decision{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.decision .q{font-family:var(--display);font-weight:700;font-size:1.05rem;margin:0}
+.decision button{all:unset;cursor:pointer;color:var(--tile);font-size:.88rem;line-height:1.35;padding:4px 0;border-radius:4px}
+.decision button:hover{text-decoration:underline}
+.decision button:focus-visible,.send:focus-visible,textarea:focus-visible,.copy:focus-visible{outline:2px solid var(--tile);outline-offset:2px}
+.chat{display:flex;flex-direction:column;gap:12px}
+.msg{max-width:92%;border-radius:12px;padding:12px 14px;min-width:0;overflow-wrap:anywhere}
+.msg.you{align-self:flex-end;background:var(--you);color:var(--you-ink)}
+.msg.bot{align-self:flex-start;background:var(--surface);border:1px solid var(--line)}
+.msg.bot p{margin:0 0 8px}.msg.bot p:last-child{margin-bottom:0}
+.msg.bot ul{margin:4px 0 8px;padding-left:20px}
+.cite{font-family:var(--mono);font-size:.72rem;color:var(--tile);vertical-align:super;text-decoration:none}
+.sources{margin-top:10px;padding-top:8px;border-top:1px dashed var(--line);font-size:.82rem;color:var(--muted)}
+.sources ol{margin:4px 0 0;padding-left:18px}
+.sources a{color:var(--tile)}
+.handoff{margin-top:8px;font-size:.85rem;background:var(--accent-soft);border-radius:6px;padding:8px 10px}
+.thinking{color:var(--muted);font-style:italic}
+.msg.note{align-self:stretch;max-width:100%;background:none;border:0;border-top:1px solid var(--line);border-radius:0;padding:10px 0 0;font-size:.85rem;color:var(--muted);text-align:center}
+.ctx{font-size:.95rem}
+.ctx button{all:unset;cursor:pointer;color:var(--tile);border:1px solid var(--tile);border-radius:8px;padding:4px 10px;text-decoration:none!important;font-weight:600}
+form{display:flex;gap:8px;align-items:flex-end}
+textarea{flex:1;min-width:0;resize:vertical;min-height:52px;max-height:200px;font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.send{background:var(--tile);color:var(--tile-ink);border:0;border-radius:10px;padding:12px 18px;font:600 1rem var(--body);cursor:pointer}
+.send:disabled{opacity:.5;cursor:default}
+.status{font-size:.82rem;color:var(--muted);min-height:1.2em}
+h2{font-family:var(--display);font-size:1.25rem;margin:0}
+.contacts{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media (max-width:560px){.contacts{grid-template-columns:1fr}}
+.contact{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px;font-size:.88rem;min-width:0}
+.contact b{display:block;font-size:.95rem}
+.contact .num{font-family:var(--mono);user-select:all}
+.contact a{color:var(--tile)}
+.lookup{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.lookup h2{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.lookup h2 small{font:500 .78rem var(--body);color:var(--muted)}
+.lrow{display:flex;gap:8px;flex-wrap:wrap}
+.lrow input{flex:1 1 240px;min-width:0;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.lrow input:focus-visible,.chip:focus-visible,.cand:focus-visible,.askprop:focus-visible{outline:2px solid var(--tile);outline-offset:2px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;font-size:.8rem;color:var(--muted);align-items:center}
+.chip{all:unset;cursor:pointer;color:var(--tile);border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:.8rem}
+.lmsg{font-size:.9rem;color:var(--muted)}
+.cands{display:flex;flex-direction:column;gap:6px}
+.cand{all:unset;cursor:pointer;display:block;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:.88rem;background:var(--bg)}
+.cand:hover{border-color:var(--tile)}
+.cand b{font-family:var(--mono);font-weight:500}
+.card{border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:12px}
+.card .addr{font-family:var(--display);font-size:1.35rem;font-weight:700;margin:0;line-height:1.15}
+.meta{font-size:.82rem;color:var(--muted);margin:0}
+.figs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+@media (max-width:560px){.figs{grid-template-columns:1fr 1fr}}
+.fig{background:var(--bg);border-radius:8px;padding:8px 10px;min-width:0}
+.fig .k{font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.fig .v{font-family:var(--mono);font-size:1.02rem;font-variant-numeric:tabular-nums}
+.fig.total{background:var(--tile);color:var(--tile-ink)}
+.fig.total .k{color:var(--tile-ink);opacity:.85}
+.math{width:100%;border-collapse:collapse;font-size:.86rem;font-variant-numeric:tabular-nums}
+.math td{padding:5px 4px;border-bottom:1px dashed var(--line);vertical-align:top}
+.math td:last-child{text-align:right;font-family:var(--mono);white-space:nowrap}
+.mathwrap{overflow-x:auto}
+.checks{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px;font-size:.88rem}
+.checks li{padding:8px 10px;border-radius:8px;background:var(--accent-soft)}
+.checks li.flag{background:var(--warn-bg);color:var(--warn-ink)}
+.card a{color:var(--tile)}
+.askprop{align-self:flex-start;background:var(--tile);color:var(--tile-ink);border:0;border-radius:10px;padding:10px 16px;font:600 .95rem var(--body);cursor:pointer}
+.ctx{font-size:.82rem;color:var(--muted);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.ctx button{all:unset;cursor:pointer;color:var(--tile);text-decoration:underline}
+.step{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 16px;display:flex;flex-direction:column;gap:12px}
+.step>h2{display:flex;align-items:center;gap:10px;font-size:1.3rem}
+.num-badge{flex:none;width:1.8em;height:1.8em;border-radius:50%;background:var(--tile);color:var(--tile-ink);display:inline-flex;align-items:center;justify-content:center;font:700 .95rem var(--body)}
+.step-sub{margin:-4px 0 0;color:var(--muted);font-size:.92rem}
+.topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.bigtext{all:unset;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:6px 12px;font-weight:600;font-size:.9rem}
+.bigtext:focus-visible{outline:2px solid var(--tile);outline-offset:2px}
+.bigtext[aria-pressed="true"]{background:var(--tile);color:var(--tile-ink);border-color:var(--tile)}
+details.mathbox{border:1px solid var(--line);border-radius:10px;padding:8px 12px}
+details.mathbox summary{cursor:pointer;color:var(--tile);font-weight:600}
+details.mathbox[open] summary{margin-bottom:8px}
+.nb{background:var(--bg);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.nb h3{margin:0;font-family:var(--display);font-size:1.05rem}
+.bar{position:relative;height:10px;background:var(--line);border-radius:999px}
+.bar i{position:absolute;top:-4px;width:4px;height:18px;border-radius:2px;background:var(--tile)}
+.bar b{position:absolute;top:-4px;width:2px;height:18px;background:var(--muted)}
+.barlab{display:flex;justify-content:space-between;font-size:.78rem;color:var(--muted)}
+.starters{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:.85rem;color:var(--muted)}
+.starters button{all:unset;cursor:pointer;color:var(--tile);border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:.85rem;background:var(--bg)}
+.starters button:focus-visible{outline:2px solid var(--tile);outline-offset:2px}
+.empty2{color:var(--muted);font-size:.92rem;margin:0}
+.next{font-size:.85rem;color:var(--muted);border-top:1px solid var(--line);padding-top:12px}
+@media (prefers-reduced-motion:no-preference){.msg{animation:in .18s ease-out}@keyframes in{from{transform:translateY(4px);opacity:.6}to{transform:none;opacity:1}}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="topbar">
+      <div class="tile"><h1>Know Your Bill NOLA</h1></div>
+      <button type="button" class="bigtext" id="bigtext" aria-pressed="false">A+ Bigger text</button>
+    </div>
+    <p class="lede">Find your home, see what you owe and why, and get plain-English answers about exemptions and appeals in New Orleans. Every answer shows where the facts come from.</p>
+    <div class="notice" role="note"><strong>Student prototype.</strong> Built by a Tulane student for a Real Estate &amp; AI class. Not legal or tax advice, and it can be wrong. Check anything important with the Orleans Parish Assessor or the offices listed at the bottom.</div>
+  </header>
+
+  <section class="step" aria-labelledby="h-look">
+    <h2 id="h-look"><span class="num-badge">1</span>Find your home</h2>
+    <p class="step-sub">Type the street address. You don't need the city or ZIP.</p>
+    <form class="lrow" id="lform">
+      <input id="addr" type="text" autocomplete="street-address" aria-label="Property address" placeholder="e.g. 1032 Hillary St">
+      <button class="send" id="lgo" type="submit">Find</button>
+    </form>
+    <div class="chips">Examples: <button type="button" class="chip">1032 Hillary St</button><button type="button" class="chip">410 Homer St</button><button type="button" class="chip">1000 Broad St</button></div>
+    <div id="lout" aria-live="polite"></div>
+  </section>
+
+  <section class="step" aria-labelledby="h-bill" id="step2">
+    <h2 id="h-bill"><span class="num-badge">2</span>Your home and your bill</h2>
+    <div id="card"><p class="empty2">Find your home in step 1 to see its value, your exemptions, an estimated 2026 tax bill, and how it compares to your neighborhood.</p></div>
+  </section>
+
+  <section class="step" aria-labelledby="h-ask" id="step3">
+    <h2 id="h-ask"><span class="num-badge">3</span>Ask a question</h2>
+    <div class="ctx" id="ctx" hidden></div>
+    <div class="starters" id="starters">Not sure what to ask? Try:
+      <button type="button" id="q1a">How is my bill figured?</button>
+      <button type="button" id="q2a">How do I apply for homestead?</button>
+      <button type="button" id="q2b">I'm 67. Can I freeze my assessment?</button>
+      <button type="button" id="q3a">My value went up. Can I appeal?</button>
+    </div>
+    <section class="chat" id="chat" aria-live="polite">
+      <div class="msg bot"><p>Hi! Ask me anything about New Orleans property values, tax bills, exemptions, or appeals. If you found your home in step 1, I'll answer about that home.</p><p>I only use official and news sources I've been given, and I'll tell you when I don't know.</p></div>
+    </section>
+    <form id="form">
+      <textarea id="ask" aria-label="Your question" placeholder="Type your question here…" rows="2"></textarea>
+      <button class="send" id="send" type="submit">Ask</button>
+    </form>
+    <div class="status" id="status"></div>
+  </section>
+
+  <section aria-labelledby="h-contacts" style="display:flex;flex-direction:column;gap:10px">
+    <h2 id="h-contacts">Talk to a person</h2>
+    <div class="contacts">
+      <div class="contact"><b>Orleans Parish Assessor</b>Values, homestead, senior freeze<br><span class="num">(504) 754-8811</span><br><span class="num">info@orleansassessors.com</span><br><a href="https://www.nolaassessor.com" target="_blank" rel="noopener">nolaassessor.com</a></div>
+      <div class="contact"><b>Board of Review (City Council)</b>Formal value appeals<br><span class="num">(504) 658-1080</span><br><a href="https://council.nola.gov/resources/property-tax-assessments-and-appeals/" target="_blank" rel="noopener">Council appeals page</a> · <a href="http://www.orleanstaxappeal.com" target="_blank" rel="noopener">OrleansTaxAppeal.com</a></div>
+      <div class="contact"><b>City Bureau of Treasury</b>Paying and finding your bill<br><span class="num">(504) 658-1712</span><br>City Hall, 1300 Perdido St, Rm 1W40<br><a href="https://nola.gov/property-tax/" target="_blank" rel="noopener">nola.gov/property-tax</a></div>
+      <div class="contact"><b>Louisiana Tax Commission</b>Appeals after the Board of Review<br><a href="https://www.latax.la.gov" target="_blank" rel="noopener">latax.la.gov</a></div>
+    </div>
+  </section>
+
+  <p class="next"><b>About the data:</b> property values come from the Orleans Parish 2026 real estate roll published by the Louisiana Tax Commission (appraisal date Jan 1, 2023). Owner names are not shown. Bill estimates use 2026 millage and were checked against official 2026 City tax bills. Your 2027 value (posted July 2026) is not in this file yet. <b>Coming next:</b> nearby sales to compare your value against.</p>
+</div>
+
+<script src="matcher.js"></script>
+<script>
+const SOURCES = {
+  S1:{t:"New Orleans City Council – Property Tax Assessments & Appeals (Tax Year 2027)",u:"https://council.nola.gov/resources/property-tax-assessments-and-appeals/"},
+  S2:{t:"City of New Orleans Treasury – How taxes are calculated (2026 millage table)",u:"https://nola.gov/next/treasury/topics/how-taxes-are-calculated/"},
+  S3:{t:"Bureau of Governmental Research – About Your Property Taxes",u:"https://www.bgr.org/about-your-property-taxes/"},
+  S4:{t:"BGR media release – Property tax rates across three parishes (Jan 29, 2026)",u:"https://www.bgr.org/wp-content/uploads/Media-Release_New-Data-on-Property-Tax-Rates-Across-Three-Parishes_01.29.26.pdf"},
+  S5:{t:"FOX 8 – Proposed 2027 New Orleans millage roll-forward (Sept 28, 2026)",u:"https://www.fox8live.com/2026/09/28/new-orleans-property-owners-could-pay-more-under-proposed-2027-tax-increase/"},
+  S6:{t:"Orleans Parish Assessor – 2027 Assessment Rolls Open July 15–Aug 17",u:"https://www.nolaassessor.com/2026/07/13/2027-assessment-rolls-open-for-public-inspection-july-15-to-august-17/"},
+  S7:{t:"City of New Orleans – Pay Property Tax / Treasury FAQ",u:"https://nola.gov/property-tax/"},
+  S8:{t:"Ballotpedia – Louisiana special assessment level and homestead rules (2022)",u:"https://news.ballotpedia.org/2022/05/25/louisiana-legislature-refers-two-constitutional-amendments-to-2022-ballot-concerning-property-taxes/"},
+  S9:{t:"Louisiana Legislature – HB 300 (2025): income limit for special assessment level, Amendment 9, Nov 3, 2026 ballot",u:"https://legis.la.gov/LEGIS/ViewDocument.aspx?d=1414405"},
+  S17:{t:"Ballotpedia – Amendment 9 (2026) results, unofficial as of Nov 4, 2026",u:"https://ballotpedia.org/Louisiana_Raise_Income_Limit_to_%24150%2C000_for_Special_Property_Tax_Assessment_Amendment_%282026%29"},
+  S10:{t:"Louisiana Legislature – Act 172 (2022) disabled veteran exemptions digest",u:"https://legis.la.gov/legis/ViewDocument.aspx?d=1294799"},
+  S11:{t:"Biz New Orleans – Orleans assessments open; 2023 reassessment background",u:"https://bizneworleans.com/2026-orleans-assessments-open-online-appeals-available/"},
+  S12:{t:"Verite News – 2025 Assessor race guide (reassessment for the 2027 tax roll)",u:"https://veritenews.org/guides/2025-new-orleans-election-guide/assessor-race/"},
+  S13:{t:"Louisiana Illuminator – 2022 amendment results (Orleans 10% cap failed)",u:"https://lailluminator.com/?p=12430"},
+  S14:{t:"CABL – Amendment 6 explainer (2018 statewide phase-in of 50%+ increases)",u:"https://cabl.org/whats-up-with-the-amendments-a-close-look-at-constitutional-amendment-6"},
+  S15:{t:"Orleans Parish Assessor – Homestead & SAL (exemptions, freezes, documents)",u:"https://www.nolaassessor.com/homestead-sal/"},
+  S16:{t:"City of New Orleans – sample 2026 Original Real Estate Tax Bill",u:"https://taxbills.nola.gov/pdfs/2026/615100903.pdf"},
+  P1:{t:"Orleans Parish 2026 real estate roll (Louisiana Tax Commission)",u:"https://stax.latax.la.gov/"},
+  P2:{t:"Your parcel's official 2026 City tax bill",u:"https://taxbills.nola.gov/"}
+};
+
+/* The knowledge base and rules live on the server in api/_prompt.js */
+
+const chat = document.getElementById('chat');
+const form = document.getElementById('form');
+const ask = document.getElementById('ask');
+const send = document.getElementById('send');
+const statusEl = document.getElementById('status');
+let turns = [];
+
+
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function fmt(text, order){
+  const lines = esc(text).split(/\n+/);
+  let html = '', inList = false;
+  for (let line of lines){
+    line = line.replace(/\*\*(.+?)\*\*/g,'<b>$1</b>')
+      .replace(/\[((?:S|P)\d+)\]/g,(m,id)=>{ if(!SOURCES[id]) return ''; if(!order.includes(id)) order.push(id); return `<a class="cite" href="${SOURCES[id].u}" target="_blank" rel="noopener">[${order.indexOf(id)+1}]</a>`; });
+    if (/^\s*[-•]\s+/.test(line)){ if(!inList){html+='<ul>';inList=true;} html+='<li>'+line.replace(/^\s*[-•]\s+/,'')+'</li>'; }
+    else { if(inList){html+='</ul>';inList=false;} if(line.trim()) html+='<p>'+line+'</p>'; }
+  }
+  if(inList) html+='</ul>';
+  return html;
+}
+function add(role, html){
+  const d = document.createElement('div');
+  d.className = 'msg ' + role;
+  d.innerHTML = html;
+  chat.appendChild(d);
+  d.scrollIntoView({block:'nearest',behavior:'smooth'});
+  return d;
+}
+function errCopy(code){
+  if (code==='no_key') return 'The chat is not set up on this server yet. The property lookup above still works, and the offices below can answer your question.';
+  if (code==='rate_limited') return 'Too many questions too fast. Wait a minute and try again.';
+  if (code==='session_expired') return 'Please sign in to Claude again, then retry.';
+  if (code==='invalid_json') return 'The answer came back garbled. Try asking again.';
+  return 'Something went wrong getting an answer. Try again, or call the Assessor at (504) 754-8811.';
+}
+
+async function askQuestion(q){
+  q = q.trim(); if(!q) return;
+  add('you', '<p>'+esc(q)+'</p>');
+  const pending = add('bot', '<p class="thinking">Looking through the sources…</p>');
+  send.disabled = true; statusEl.textContent = '';
+  turns.push({role:'user', content:q});
+  const recent = turns.slice(-6);
+  try{
+    const resp = await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({messages:recent, property: current ? propertyContext(current) : ''})});
+    const r = await resp.json().catch(()=>({}));
+    if(!resp.ok){ const err=new Error(r.error||'error'); err.code=r.code||('http_'+resp.status); throw err; }
+    const order = [];
+    let html = fmt(String(r.answer||"I don't know."), order);
+    (Array.isArray(r.sources)?r.sources:[]).forEach(id=>{ if(SOURCES[id] && !order.includes(id)) order.push(id); });
+    if (r.handoff) html += '<div class="handoff"><b>Talk to a person:</b> '+esc(r.handoff)+'</div>';
+    if (order.length) html += '<div class="sources">Sources<ol>'+order.map(id=>`<li><a href="${SOURCES[id].u}" target="_blank" rel="noopener">${esc(SOURCES[id].t)}</a></li>`).join('')+'</ol></div>';
+    else html += '<div class="sources">No source matched this answer, so treat it as unverified.</div>';
+    pending.innerHTML = html;
+    turns.push({role:'assistant', content:String(r.answer||'')});
+  }catch(e){
+    turns.pop();
+    pending.innerHTML = '<p>'+esc(errCopy(e && e.code))+'</p>';
+  }finally{
+    send.disabled = false;
+  }
+}
+
+
+/* ---------- Property lookup (Layer 2) ---------- */
+// record fields: 0 bill,1 addr,2 dist,3 subdiv,4 occ,5 landMV,6 imprMV,7 totMV,8 totAV,9 homestead,10 veteran,11 firstResp,12 otherEx,13 taxAV,14 freeze,15 transferDate,16 price,17 instrument,18 status,19 hsPct,20 mail,21 landAV,22 imprAV
+const lform=document.getElementById('lform'), addrIn=document.getElementById('addr'), lout=document.getElementById('lout'), ctx=document.getElementById('ctx'), cardEl=document.getElementById('card');
+let NB=null; fetch('data/nbhd.json').then(r=>r.ok?r.json():null).then(j=>{NB=j;}).catch(()=>{});
+const bigBtn=document.getElementById('bigtext');
+function setBig(on){document.documentElement.classList.toggle('big',on);bigBtn.setAttribute('aria-pressed',on?'true':'false');bigBtn.textContent=on?'A− Normal text':'A+ Bigger text';try{localStorage.setItem('kyb-big',on?'1':'0');}catch(e){}}
+try{ if(localStorage.getItem('kyb-big')==='1') setBig(true);}catch(e){}
+bigBtn.addEventListener('click',()=>setBig(!document.documentElement.classList.contains('big')));
+function nbInfo(r){ if(!NB||!r[3]||!/RESIDENTIAL/.test(r[4])||/EX/.test(r[18])) return null; const n=NB[r[3]]; if(!n) return null;
+  return {name:r[3],count:n[0],median:n[1],hsPct:n[2],localPct:n[3],diff:r[7]>0?Math.round((r[7]/n[1]-1)*100):null}; }
+const loaded={}; let recs=[], index=null, current=null;
+const money=n=>'$'+Math.round(n).toLocaleString('en-US');
+const cents=n=>'$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const bucketKey=c=>/[A-Z]/.test(c[0])?c[0]:'n'+c[0];
+async function ensureBuckets(keys){
+  let changed=false;
+  for(const k of keys){ if(loaded[k]) continue;
+    try{ const r=await fetch('data/b_'+k+'.json'); loaded[k]=r.ok?await r.json():[]; }catch(e){ loaded[k]=[]; }
+    changed=true; }
+  if(changed){ const seen=new Set(); recs=[];
+    for(const v of Object.values(loaded)) for(const r of v) if(!seen.has(r[0])){seen.add(r[0]);recs.push(r);}
+    index=KYBMatcher.buildIndex(recs,r=>r[1]); }
+}
+function estimate(r){
+  const alg=r[2]===5, hsM=alg?120.50:121.97, totM=alg?132.01:133.48, pfM=11.51;
+  const ex=/EX/.test(r[18]);
+  const tav=r[13], pfBase=ex?0:Math.max(0,r[8]-r[12]);
+  const main=tav*hsM/1000, pf=pfBase*pfM/1000;
+  const hsSave=r[9]>0?0:Math.min(7500,tav)*hsM/1000;
+  return {alg,hsM,totM,pfM,ex,tav,pfBase,main,pf,total:main+pf,hsSave};
+}
+function districtName(d){return {1:'CBD / Warehouse District area',2:'French Quarter / Tremé / Lakeview area',3:'Gentilly / 7th-9th Wards / New Orleans East area',4:'Central City / Irish Channel area',5:'Algiers / West Bank',6:'Broadmoor / Fontainebleau area',7:'Carrollton / Hollygrove area'}[d]||'';}
+function rollUrl(d){return 'https://stax.latax.la.gov/TaxRollsFolder/2025/ORLEANSDISTRICT'+d+'_2026_TAXROLL.zip';}
+function billUrl(b){return 'https://taxbills.nola.gov/pdfs/2026/'+encodeURIComponent(b)+'.pdf';}
+function frozen(r){return String(r[14]).split(' | ').some(x=>x!=='0');}
+
+let chatProp=null;
+function newTopic(msg){ turns=[]; if(chat.children.length>1) add('note','<p>'+msg+'</p>'); }
+function renderCard(r){
+  if(chatProp!==r[0]){ chatProp=r[0]; newTopic('New chat about <b>'+esc(r[1])+'</b>. Answers below are only about this property.'); }
+  current=r; const e=estimate(r);
+  SOURCES.P1={t:'Orleans Parish 2026 real estate roll, District '+r[2]+' (Louisiana Tax Commission)',u:rollUrl(r[2])};
+  SOURCES.P2={t:'This tool\'s 2026 bill estimate for parcel '+r[0]+' (opens the official bill to compare)',u:billUrl(r[0])};
+  const res=/RESIDENTIAL/.test(r[4]);
+  const ex=[]; if(r[9]) ex.push('Homestead '+money(r[9])+(r[19]&&!/^100/.test(r[19])?' ('+parseFloat(r[19])+'% share)':''));
+  if(r[10]) ex.push('Veteran '+money(r[10])); if(r[11]) ex.push('First responder '+money(r[11])); if(r[12]) ex.push('Other '+money(r[12]));
+  const checks=[];
+  if(e.ex) checks.push(['','This parcel is listed as <b>exempt</b> (for example government, church, school, or nonprofit property), so it owes no regular property tax on this record.']);
+  if(res && !r[9] && !e.ex) checks.push(['flag','<b>No homestead exemption on file.</b> If an owner lives here as their primary home, homestead would cut about <b>'+money(e.hsSave)+'/yr</b> at 2026 rates. Rentals and second homes do not qualify. You need proof of ownership, an ID with this address, and an Entergy or cable bill in your name here.']);
+  if(r[9] && !frozen(r)) checks.push(['','Owner 65+ with household income of $102,700 or less, or a 50%+ disability? You may qualify for a <b>freeze</b> that holds this assessment where it is.']);
+  if(r[9] && !r[10] && !r[11]) checks.push(['','Veteran with a 50%+ service-connected rating, or an Orleans first responder? Extra exemptions stack on top of homestead.']);
+  if(frozen(r)) checks.push(['','This record has a <b>freeze code</b>. The assessment ('+money(r[8])+') is held below 10% of today\'s market value ('+money(r[7]*0.1)+').']);
+  if(/SALE/.test(r[17]) && r[16]>1000) checks.push(['','Last recorded sale: <b>'+money(r[16])+'</b> on '+esc(r[15])+'. The Assessor\'s market value is '+money(r[7])+'. A recent sale price is one of the three kinds of evidence the Board of Review weighs.']);
+  checks.push(['','These are <b>2026</b> values (appraisal date Jan 1, 2023). Your 2027 value was posted in July 2026, and the appeal deadline for it was Aug 20, 2026. Check nolaassessor.com for the new number.']);
+  const mathRows = e.ex ? '<tr><td>Exempt parcel</td><td>$0.00</td></tr>' :
+   `<tr><td>Taxable assessed value (after exemptions${frozen(r)?', frozen':''})</td><td>${money(e.tav)}</td></tr>
+    <tr><td>× ${e.hsM.toFixed(2)} mills (${e.alg?'Algiers':'East Bank'} rate, minus police/fire) ÷ 1,000</td><td>${cents(e.main)}</td></tr>
+    <tr><td>+ Police &amp; fire: ${money(e.pfBase)} × 11.51 mills ÷ 1,000 (homestead doesn't apply)</td><td>${cents(e.pf)}</td></tr>
+    <tr><td><b>Estimated 2026 tax</b></td><td><b>${cents(e.total)}</b></td></tr>`;
+  const nb=nbInfo(r); let nbHtml='';
+  if(nb){ const max=Math.max(r[7],nb.median)*1.6, pos=v=>Math.min(98,Math.max(1,v/max*100));
+    const word=nb.diff===null?'':(Math.abs(nb.diff)<5?'about the same as':(nb.diff>0?nb.diff+'% above':Math.abs(nb.diff)+'% below'));
+    nbHtml=`<div class="nb"><h3>Compared to your neighborhood</h3>
+      <p style="margin:0">Your home's value is <b>${word}</b> the typical home in <b>${esc(nb.name)}</b> (${money(nb.median)}, middle of ${nb.count.toLocaleString()} homes).</p>
+      <div class="bar" role="img" aria-label="Your home ${money(r[7])} compared with the neighborhood middle value ${money(nb.median)}"><b style="left:${pos(nb.median)}%"></b><i style="left:${pos(r[7])}%"></i></div>
+      <div class="barlab"><span>$0</span><span>${money(max)}</span></div><p class="meta">Blue mark = your home · gray line = neighborhood middle</p>
+      <p class="meta">${nb.hsPct}% of homes here have a homestead exemption, and ${nb.localPct}% of owners get their mail in Louisiana. A value well above your neighbors' can be worth asking the Assessor about, but size, condition, and lot differ, so this is not proof your value is wrong.</p></div>`; }
+  lout.innerHTML='<p class="lmsg">Found it. Your home is in step 2 below.</p>';
+  cardEl.innerHTML = `<div class="card" style="border-top:0;padding-top:0">
+    <div><p class="addr">${esc(r[1])}</p>
+    <p class="meta">Tax bill / parcel ${esc(r[0])} · ${esc(r[4].toLowerCase())} · District ${r[2]}${districtName(r[2])?' ('+districtName(r[2])+')':''}${r[3]?' · '+esc(r[3]):''}</p></div>
+    <div class="figs">
+      <div class="fig"><div class="k">What the City says it's worth</div><div class="v">${money(r[7])}</div></div>
+      <div class="fig"><div class="k">Assessed value (about 10%)</div><div class="v">${money(r[8])}</div></div>
+      <div class="fig"><div class="k">Land / building</div><div class="v">${money(r[5])} / ${money(r[6])}</div></div>
+      <div class="fig"><div class="k">Discounts (exemptions)</div><div class="v" style="font-size:.88rem">${ex.length?ex.map(esc).join('<br>'):'None'}</div></div>
+      <div class="fig"><div class="k">Amount that gets taxed</div><div class="v">${money(r[13])}</div></div>
+      <div class="fig total"><div class="k">Estimated 2026 tax bill</div><div class="v">${cents(e.total)}</div></div>
+    </div>
+    <details class="mathbox"><summary>Show me the math</summary><div class="mathwrap"><table class="math"><tbody>${mathRows}</tbody></table></div></details>
+    ${nbHtml}
+    <p class="meta">Neighborhood security fees or special districts (like the Downtown Development District) can add to this. If your bill says "ACT 718," a phase-in makes it lower. <a href="${billUrl(r[0])}" target="_blank" rel="noopener">Open the official 2026 bill for this parcel</a>.</p>
+    <ul class="checks">${checks.map(([c,t])=>`<li class="${c}">${t}</li>`).join('')}</ul>
+    <button type="button" class="askprop" id="askprop">Ask a question about this home (step 3)</button>
+  </div>`;
+  ask.placeholder='Ask about '+r[1]+'…';
+  document.getElementById('askprop').addEventListener('click',()=>{document.getElementById('step3').scrollIntoView({block:'start',behavior:'smooth'});ask.focus({preventScroll:true});});
+  document.getElementById('step2').scrollIntoView({block:'start',behavior:'smooth'});
+  ctx.hidden=false; ctx.innerHTML='Your questions are about <b>'+esc(r[1])+'</b>. <button type="button" id="clearctx">Ask a general question instead</button>';
+  document.getElementById('clearctx').addEventListener('click',()=>{current=null;chatProp=null;ctx.hidden=true;ask.placeholder='Type your question here…';newTopic('New chat with general questions. Answers below are not about any one property.');ask.focus();});
+}
+
+function propertyContext(r){
+  const e=estimate(r);
+  return [
+   `Address: ${r[1]} | tax bill/parcel ${r[0]} | assessment district ${r[2]}${e.alg?' (Algiers/West Bank)':' (East Bank)'} | subdivision ${r[3]} | type ${r[4]} | status ${r[18]==='EX'?'exempt':'active/taxable'} [P1]`,
+   `2026 market value ${money(r[7])} (land ${money(r[5])}, building ${money(r[6])}); assessed value ${money(r[8])} [P1]`,
+   `Exemptions on file: homestead ${money(r[9])}${r[19]?' ('+r[19]+'%)':''}, veteran ${money(r[10])}, first responder ${money(r[11])}, other ${money(r[12])}; taxable value ${money(r[13])}; freeze ${frozen(r)?'YES (code '+r[14]+')':'no'} [P1]`,
+   `Last recorded transfer: ${r[15]||'unknown'}, price ${r[16]>1000?money(r[16]):'not a market sale or not listed'}, instrument ${r[17]||'unknown'} [P1]`,
+   (()=>{const nb=nbInfo(r); return nb?`Neighborhood (assessor subdivision ${nb.name}): median residential market value ${money(nb.median)} across ${nb.count} homes; this home is ${nb.diff}% vs. that median; ${nb.hsPct}% of homes have homestead. Size, condition and lot differ, so this is context, not proof of an error [P1]`:``;})(),
+   `Owner mailing address is ${r[20]==='L'?'in New Orleans':r[20]==='A'?'elsewhere in Louisiana':r[20]==='X'?'outside Louisiana':'unknown'} [P1]`,
+   e.ex?`Estimated 2026 tax: $0 (exempt parcel) [P2]`:
+   `Estimated 2026 tax: taxable ${money(e.tav)} x ${e.hsM} mills = ${cents(e.main)}, plus police/fire ${money(e.pfBase)} x 11.51 mills = ${cents(e.pf)}, total ${cents(e.total)}; excludes neighborhood fees and any Act 718 phase-in [P2]`,
+   (r[9]||e.ex||!/RESIDENTIAL/.test(r[4]))?``:`If an owner lived here and got homestead, estimated savings ${money(e.hsSave)} per year at 2026 rates [P2]`,
+   `Note: these are 2026 values; the 2027 values posted in July 2026 are not in this data.`
+  ].filter(Boolean).join('\n');
+}
+
+async function lookup(q){
+  q=q.trim(); if(!q) return;
+  lout.innerHTML='<p class="lmsg">Searching the 2026 roll…</p>';
+  current=null; ctx.hidden=true; ask.placeholder='Type your question here…';
+  cardEl.innerHTML='<p class="empty2">Find your home in step 1 to see its value, your exemptions, an estimated 2026 tax bill, and how it compares to your neighborhood.</p>';
+  if(!window.KYBMatcher){ lout.innerHTML='<p class="lmsg">The address finder did not load. Refresh the page and try again.</p>'; return; }
+  const p=KYBMatcher.parse(q);
+  const keys=new Set(); if(p.core) keys.add(bucketKey(p.core)); if(p.coreWithDir) keys.add(bucketKey(p.coreWithDir));
+  await ensureBuckets([...keys]);
+  if(!index){ lout.innerHTML='<p class="lmsg">Could not load property data. Check your connection and try again.</p>'; return; }
+  const m=KYBMatcher.match(q,index);
+  if(m.status==='none'){
+    lout.innerHTML='<p class="lmsg"><b>No match.</b> '+esc(m.reason)+' Check the spelling, or search the Assessor\'s site at <a href="https://www.nolaassessor.com" target="_blank" rel="noopener">nolaassessor.com</a>. Some doubles and condos are filed under a neighboring number.</p>';
+    return;
+  }
+  if(m.status==='match'){ renderCard(m.hits[0].rec); return; }
+  const why = m.method.startsWith('nearby') ? 'That exact number is not on the roll. Doubles are often filed under one side\'s number. Is one of these yours?'
+            : m.method.startsWith('fuzzy') ? 'We corrected the street spelling. Is this the right property?'
+            : 'More than one parcel matches. The roll drops "North" and "South," and some addresses cover several parcels or units. Pick yours:';
+  lout.innerHTML='<p class="lmsg">'+why+'</p><div class="cands">'+m.hits.slice(0,12).map((h,i)=>`<button type="button" class="cand" data-i="${i}"><b>${esc(h.addr)}</b> · ${esc(h.rec[4].toLowerCase())} · ${esc(h.rec[3]||'')} · District ${h.rec[2]} · value ${money(h.rec[7])}</button>`).join('')+'</div>'+(m.hits.length>12?'<p class="lmsg">Showing 12 of '+m.hits.length+'. Add a unit number to narrow it down.</p>':'');
+  lout.querySelectorAll('.cand').forEach(b=>b.addEventListener('click',()=>renderCard(m.hits[+b.dataset.i].rec)));
+}
+lform.addEventListener('submit',ev=>{ev.preventDefault();lookup(addrIn.value);});
+document.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{addrIn.value=c.textContent;lookup(c.textContent);}));
+
+form.addEventListener('submit', ev=>{ ev.preventDefault(); const q = ask.value; ask.value=''; askQuestion(q); });
+ask.addEventListener('keydown', ev=>{ if(ev.key==='Enter' && !ev.shiftKey){ ev.preventDefault(); form.requestSubmit(); }});
+['q1a','q2a','q2b','q3a'].forEach(id=>{ const b=document.getElementById(id); b.addEventListener('click',()=>askQuestion(b.textContent)); });
+</script>
+</body>
+</html>
