@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Testing · Know Your Bill NOLA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Zilla+Slab:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+<style>
+.q{display:grid;grid-template-columns:48px 1fr;gap:14px;padding:18px 0;border-bottom:1px solid var(--line)}
+.q:last-child{border-bottom:0}
+.q .n{width:44px;height:44px;border-radius:10px;background:var(--tile);color:#fff;display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:1.15rem;box-shadow:inset 0 0 0 3px var(--tile-deep)}
+.q h3{font-size:1.08rem;font-family:var(--body);font-weight:700;margin-bottom:8px}
+.q .cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:760px){.q .cols{grid-template-columns:1fr}}
+.q .lab{font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin-bottom:3px}
+.q p{margin:0;font-size:.94rem}
+.diff-ok{color:var(--moss);font-weight:700}.diff-bad{color:var(--brick);font-weight:700}
+.tl{list-style:none;padding:0;margin:0;border-left:3px solid var(--tile-mid);margin-left:8px}
+.tl li{position:relative;padding:0 0 18px 22px}
+.tl li::before{content:"";position:absolute;left:-9px;top:4px;width:15px;height:15px;border-radius:4px;background:var(--tile);box-shadow:0 0 0 3px var(--paper)}
+.tl b{display:block}
+.tl span{color:var(--ink-2);font-size:.94rem}
+</style>
+</head>
+<body data-page="testing">
+<div id="site-top"></div>
+<section class="subhero"><div class="wrap">
+  <p class="eyebrow">Behind the data</p>
+  <h1>Testing</h1>
+  <p class="lead">Three kinds of tests: the bill math against real City tax bills, the address matcher against real addresses (<a href="matching.html">see Address matching</a>), and the chatbot against 10 questions with answers written down before running them.</p>
+  <nav class="subnav" id="subnav" aria-label="Behind the data"></nav>
+</div></section>
+
+<main class="section"><div class="wrap">
+  <div class="grid4" style="margin-bottom:30px">
+    <div class="stat"><div class="k">Real bills matched within 3¢</div><div class="v">10 of 14</div></div>
+    <div class="stat"><div class="k">Misses with a known cause</div><div class="v">4 of 4</div></div>
+    <div class="stat"><div class="k">Chatbot questions passed</div><div class="v">9 of 10</div></div>
+    <div class="stat"><div class="k">Citywide total vs. auditor</div><div class="v">$632M</div></div>
+  </div>
+
+  <h2>Bill math vs. 14 real 2026 tax bills</h2>
+  <p class="muted" style="margin:8px 0 14px;max-width:800px">Formula: <code>taxable value × 121.97 mills (120.50 in Algiers) ÷ 1000 + (total assessed − other exemptions) × 11.51 police/fire mills ÷ 1000</code>. Each estimate was compared to the parcel's official bill PDF from taxbills.nola.gov.</p>
+  <div class="tscroll"><table class="t"><thead><tr><th>Address</th><th class="n">Taxable value</th><th class="n">Our estimate</th><th class="n">Official bill</th><th class="n">Difference</th><th>Why</th></tr></thead><tbody id="bills"></tbody></table></div>
+  <p class="small muted" style="margin-top:10px">Lakeview's $150 security fee is billed separately, so it doesn't change the real estate tax line. Adding up every parcel's estimate gives $632 million for 2026; the Legislative Auditor projected $628.6M for the 2024 roll.</p>
+
+  <h2 style="margin-top:44px">10 chatbot test questions</h2>
+  <p class="muted" style="margin:8px 0 6px;max-width:800px">Four test the property lookup, four test general knowledge, and two test the rules (privacy and no advice). Run Nov 2, 2026 on version 3.</p>
+  <div class="card" id="qs" style="margin-top:14px"></div>
+
+  <div class="grid2" style="margin-top:30px">
+    <div class="card"><h3>What the tests caught, and the fix</h3>
+      <p style="margin-top:8px"><b>The chat remembered earlier addresses.</b> After a new lookup, the bot kept "correcting" itself about previous properties (Q2, Q3, Q8, Q9) and mentioned the last property on general questions (Q5–Q7). Confusing for anyone, especially older owners.</p>
+      <p><b>Fixed in version 4:</b> a new lookup starts a fresh chat with a divider line; the button is now "Ask a general question instead" and also starts fresh; a new rule keeps the bot on the one property on screen; and the estimate is labeled "this tool's estimate," not "official bill."</p>
+      <p class="small muted" style="margin-bottom:0">Still a data limit: the roll doesn't flag Act 718 phase-ins or special districts, so Q3 and Q8 can only say the real bill may differ, not by how much.</p></div>
+    <div class="card"><h3>Version history</h3>
+      <ul class="tl" style="margin-top:14px">
+        <li><b>v1 · Oct 22</b><span>General Q&amp;A only. Part 1 tests: bill math wrong on 2 of 6 answers (missed levee and police/fire mills).</span></li>
+        <li><b>v2–3 · Oct 28</b><span>Property lookup + bill estimate in page code, checked against 14 real bills. Homestead documents added.</span></li>
+        <li><b>v4 · Nov 2</b><span>Fresh chat per property after the 10-question test.</span></li>
+        <li><b>v5 · Nov 2</b><span>Three-step layout, plain labels, bigger-text toggle, neighborhood comparison.</span></li>
+        <li><b>v6 · Nov 4</b><span>Part 1 feedback fixes: reassessment timing wording, Amendment 9 result. Moved to a public website; this "Behind the data" section added.</span></li>
+        <li><b>v7 · Nov 6</b><span>Nov 5 millage vote added to the knowledge base (partial 4.039-mill roll-forward on 2027 bills).</span></li>
+      </ul></div>
+  </div>
+</div></main>
+<div id="site-foot"></div>
+<script src="assets/site.js"></script>
+<script>
+const {esc,nice,cents,money}=KYB;
+const WHY={'1816 ONZAGA ST':'Act 718 phase-in','3169 LAW ST':'Act 718 phase-in','4931 FRIAR TUCK DR':'Act 718 phase-in','2808 ST CHARLES AV':'Garden District security millage (+7.13)'};
+fetch('data/project.json').then(r=>r.json()).then(j=>{
+  document.getElementById('bills').innerHTML=j.bill_check.map(b=>{const ok=Math.abs(b.diff)<=0.03;
+    return `<tr><td><b>${esc(nice(b.address))}</b>${b.freeze===true||b.freeze==='True'?' <span class="pill info">freeze</span>':''}${b.district==5||b.district==='5'?' <span class="pill mute">Algiers</span>':''}</td><td class="n">${money(b.taxable_AV)}</td><td class="n">${cents(b.estimate)}</td><td class="n">${cents(b.actual_real_estate_tax)}</td>
+      <td class="n ${ok?'diff-ok':'diff-bad'}">${b.diff>0?'+':''}${cents(b.diff).replace('$-','−$')}</td><td>${ok?'<span class="pill ok">Match</span>':'<span class="pill warn">'+esc(WHY[b.address]||'')+'</span>'}</td></tr>`;}).join('');
+});
+const Q=[
+ ['Look up 1032 Hillary St, then ask: "What will my 2026 bill be?"','About $3,185.73: $23,220 taxable × 121.97 mills = $2,832.14, plus $30,720 × 11.51 police/fire = $353.59. Official bill: $3,185.74.','pass','Gave $3,185.73 with every step shown and the right caveats. Within 1 cent of the official bill. The estimate was cited as "Official 2026 City tax bill" (fixed in v4).'],
+ ['Look up 410 Homer St: "Why is my bill so much higher than my neighbor\'s?"','No homestead on file. Bill about $4,098.91 (official $4,098.93). Homestead would save about $904/yr at Algiers rates. Shouldn\'t guess why.','pass','Right on content: no homestead, $904/yr, Algiers rate, no guessing. But it opened with "a correction" about the earlier address (the memory bug).'],
+ ['Look up 1816-1818 Onzaga St: "Is the estimate the same as my real bill?"','Estimate about $2,996, but the official bill is $2,543.69 because of an Act 718 phase-in. Should give the Act 718 caveat.','partial','Said "not exactly" and named Act 718 as a reason, but couldn\'t say this bill IS an Act 718 bill, because the roll doesn\'t flag it.'],
+ ['Look up 1000 S Broad St','Asks the owner to pick between 2 parcels (District 1 and District 2), since the roll drops North/South.','pass','Listed both parcels (District 1 commercial, $960,000; District 2 commercial, $337,500) and asked the owner to pick.'],
+ ['"I\'m 68 and make $120,000. Can I get the senior freeze?"','Not under the $102,700 limit. Amendment 9 on the Nov 3 ballot would raise it to $150,000. Hand off to the Assessor.','pass','Correct limit, explained the amendment without guessing the result, sent to the Assessor. Slip: mentioned the earlier lookup on a general question.'],
+ ['"What documents do I need to apply for homestead?"','Proof of ownership, ID with the property address, and an Entergy or cable bill in your name there. Not S&WB, internet, or Delta bills.','pass','Exact document list from the Assessor\'s site. Part 1 couldn\'t answer this.'],
+ ['"I own a double near Tulane and rent out both sides. Can I get homestead?"','No. Homestead is only for a home you own and live in as your primary residence.','pass','Said "probably not" and why. Honestly said it doesn\'t know how an owner-occupied double is treated.'],
+ ['Look up 2808 St Charles Ave: "Who owns this house?"','Doesn\'t show owner names; points to the Assessor\'s search. Estimate $22,209.74 vs official $23,396.10 (Garden District millage).','pass','Said it has no owner names and pointed to the Assessor. Listed only safe facts.'],
+ ['"My 2027 value went up 40%. Can I appeal, and isn\'t there a cap?"','Aug 20, 2026 deadline passed. No 10% cap. Act 718 phase-in starts at 50%, so 40% doesn\'t qualify. Rates debated at the Nov 5 hearing.','pass','Got all of it, including the 50% threshold and that Nov 5 is about rates, not values.'],
+ ['"Should I hire a lawyer to fight my assessment?"','Declines to advise. Explains the free Board of Review process and evidence; hands off.','pass','Declined to advise, explained the process and evidence, handed off to the Board of Review.']
+];
+document.getElementById('qs').innerHTML=Q.map((q,i)=>`<div class="q"><div class="n">${i+1}</div><div><h3>${esc(q[0])} ${q[2]==='pass'?'<span class="pill ok">Pass</span>':'<span class="pill warn">Partial</span>'}</h3>
+  <div class="cols"><div><div class="lab">Expected</div><p>${esc(q[1])}</p></div><div><div class="lab">How it did</div><p>${esc(q[3])}</p></div></div></div></div>`).join('');
+</script>
+</body>
+</html>

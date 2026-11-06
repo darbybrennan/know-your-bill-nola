@@ -4,20 +4,24 @@
 >
 > **Project:** Final project, AI & Real Estate (SRED 4935), Tulane, Fall 2026 · **Owner:** Darby Brennan
 > **Course name for the project:** NOLA Assessment Navigator · **Product name:** Know Your Bill NOLA
-> **Last updated:** Nov 4, 2026 (Part 1 feedback fixes, Amendment 9 result)
+> **Last updated:** Nov 6, 2026 (website + Nov 5 millage vote; ready for Part 2 submission)
 
 ---
 
 ## 0. Quick facts for the agent
 
 - **Product:** a plain-English chatbot for New Orleans property owners.
-- **Live chatbot (Layers 1 + 2):** https://claude.ai/artifact/Y1STBAZpBpHdWU68LE76cU (version 5)
+- **Live website (public, no sign-in):** https://know-your-bill-nola-know-your-bill.vercel.app/
+  - Repo: github.com/darbybrennan/know-your-bill-nola (site files in `know-your-bill-site/`; Vercel Root Directory = that folder).
+  - Chat runs through `api/chat.js` (Vercel function) with the key in the `ANTHROPIC_API_KEY` env var. Rules + KB live server-side in `api/_prompt.js`.
+- **Old artifact version (kept for history):** https://claude.ai/artifact/Y1STBAZpBpHdWU68LE76cU
 - **Part 2 report:** "Know Your Bill NOLA — Part 2" doc, https://claude.ai/artifact/MPN557EobZ4EGGcejoG7rR
-- **Current build:** a Claude artifact made of these files:
-  - `index.html`: the page, plus the chat prompt (`RULES`), knowledge base (`KB`), and source list (`SOURCES`). It calls Claude through the `sample` capability.
-  - `matcher.js`: turns a typed address into roll format and finds the parcel (§10.3).
-  - `data/nbhd.json`: median residential value, homestead %, and Louisiana-mail % for 352 assessor subdivisions with 20+ homes. Feeds "Compared to your neighborhood."
-  - `data/b_*.json`: the 2026 roll, trimmed to 23 fields per parcel and split into 33 files by the first letter of the street name. The page only fetches the file it needs.
+- **Site pages:**
+  - `index.html`: the tool (address lookup → big bill number + value→taxable→bill strip → "Things to check" → neighborhood compare → chat → contacts).
+  - "Behind the data" section: `data.html` (5 interactive EDA charts + neighborhood explorer + Excel checks), `dictionary.html` (searchable 115-field dictionary), `matching.html` (method, live matcher demo, 16-address + 4,299-STR tests, Census Geocoder check), `outside-data.html` (STR API + map, Census), `testing.html` (14 real bills, 10 test questions, version history), `sources.html` (architecture, rules, S1–S18, data sources).
+  - Shared `assets/site.css` (design tokens) and `assets/site.js` (header, footer, bigger-text toggle, `KYB.nice()` address title-casing).
+  - Data: `data/b_*.json` (roll buckets), `data/nbhd.json`, `data/eda.json` (chart data + STR points), `data/project.json` (dictionary, match tests, bill check, geocoder sample).
+- **Privacy rule for public pages:** owner names, contact names, and mailing addresses never appear, including in data dictionary examples (redacted in `project.json`).
 - **The bot answers only from the KB plus the one property record the user looked up.** It cannot browse the web.
 - **Bill estimates are computed by page code, not by the model.** The model is told to use the numbers exactly as given.
 - **Deadlines:**
@@ -191,8 +195,8 @@ Every bullet carries a source tag. Full links are in §8.
 
 - **Millage is in play** [S5]:
   - The City submitted two 2027 levies: rolled-back rates, or a **roll-forward** from 44.67 to 52.11 mills on several city taxes.
-  - The roll-forward would add about **$178/yr** for a homesteaded $300K home.
-  - **Public hearing: Nov 5, 2026.** Update this file after it.
+  - The full roll-forward would have added about **$178/yr** for a homesteaded $300K home.
+  - **Decided Nov 5, 2026:** the Council unanimously approved a **partial** roll-forward of a combined **4.039 mills** (less than the 7.44 proposed). It shows up on **2027 bills** (mailed Dec 2026) and is expected to raise about $23.27M ($21.5M for the city budget, the rest for Audubon and City Park) [S18]. The 2027 budget is due Dec 1.
 - **2027 bills** should follow the normal calendar: mailed in December 2026, due around Jan 31, 2027 [S3][S7].
 
 ### 2.7 Appeals: process and deadlines
@@ -218,7 +222,7 @@ Every bullet carries a source tag. Full links are in §8.
    - File in writing within **10 business days** of the BOR notice [S1]. Use LTC Form 3103.A [S1].
 5. **What value appeals can't fix.**
    - A value appeal targets the *value*, not the tax rate.
-   - Rate complaints go to the taxing bodies. Use the public hearings, like the Nov 5 hearing [S5].
+   - Rate complaints go to the taxing bodies at their public hearings. The 2027 city rate was set at the Nov 5, 2026 hearing [S18].
 
 ---
 
@@ -250,7 +254,7 @@ Build these into the prompt and the UI. They are non-negotiable.
 7. **Be honest about time.**
    - Say which tax year a number comes from.
    - Flag when a deadline has passed and what options remain.
-   - Never present a pending vote (the Nov 5 millage hearing) as decided. Present Amendment 9 as passed on unofficial results until it is certified.
+   - Never present a pending vote as decided. Present Amendment 9 as passed on unofficial results until it is certified. The Nov 5 roll-forward is decided [S18].
 8. **Scope.**
    - Orleans Parish only. Other parishes have different deadlines.
    - Renters get the one-line redirect (§1).
@@ -328,12 +332,12 @@ Each topic lists its sources and the questions owners most likely ask. These dou
 - **Content:**
   - Values reset to market.
   - The appeal window closed Aug 20, 2026.
-  - Millage must roll back, but the City is weighing a roll-forward (Nov 5 hearing).
+  - Millage must roll back, but on Nov 5 the Council approved a partial 4.039-mill roll-forward for 2027 bills [S18].
   - There is no 10% cap.
   - The 50%+ phase-in rule.
   - The senior freeze income limit rises to $150K under Amendment 9 (passed Nov 3, unofficial).
   - 2027 bills arrive in December.
-- **Sources:** S1, S3, S5, S6, S9, S12, S13, S14
+- **Sources:** S1, S3, S5, S6, S9, S12, S13, S14, S18
 - **Owners ask:**
   1. "Will my taxes go up in 2027?"
   2. "My value jumped. Is there a cap?"
@@ -357,10 +361,10 @@ Each topic lists its sources and the questions owners most likely ask. These dou
 
 ## 5. Live chatbot (Layers 1 + 2)
 
-- **Link:** https://claude.ai/artifact/Y1STBAZpBpHdWU68LE76cU
-- **Sharing:** the artifact is private by default. Share it with the professor from the artifact's Share menu before submitting.
+- **Link (submit this one):** https://know-your-bill-nola-know-your-bill.vercel.app/ — public website, no sign-in needed.
+- **Old artifact version:** https://claude.ai/artifact/Y1STBAZpBpHdWU68LE76cU (private; kept for history).
 - **How it works:**
-  - The page prompt combines the §3 rules with a KB of 16 numbered sources (S1–S16), plus the looked-up property record (P1/P2) when there is one.
+  - The server prompt (`api/_prompt.js`) combines the §3 rules with a KB of 18 numbered sources (S1–S18), plus the looked-up property record (P1/P2) when there is one.
   - The address lookup and bill estimate run in page code (see §10), not in the model.
   - Claude returns JSON: `{answer, sources[], handoff, confident}`.
   - The page renders:
@@ -368,7 +372,7 @@ Each topic lists its sources and the questions owners most likely ask. These dou
     - a source list;
     - a "Talk to a person" handoff;
     - an "unverified" label when no source matched.
-- **Viewer note:** each viewer is asked once to allow the page to use Claude, and calls run on the viewer's own Claude account.
+- **Cost:** chat calls run on Darby's Anthropic API key (Vercel env var), so the account needs prepaid credits. Rate limit: 30 questions per visitor per hour.
 
 ---
 
@@ -411,11 +415,12 @@ The five starter questions were run in the live page; screenshots are attached s
 ### Current (Part 2)
 - **Files:** `index.html`, `matcher.js`, `data/b_*.json` (published together as one artifact), `CLAUDE.md`. Version 1 of the page is kept as `index_v1.html`.
 - **To republish:** publish `index.html` with `matcher.js` and every `data/` file listed in `files`. Leaving them out keeps the published copies.
-- **Design:**
-  - Theme: street-tile blue on cool paper.
-  - Fonts: Zilla Slab (display), Public Sans (body), IBM Plex Mono (numbers).
-  - Light and dark tokens.
-  - Mobile-first.
+- **Design (Nov 4 website):**
+  - Theme: New Orleans sidewalk street tiles: cobalt `#1E4C9A` lettering on glazed white tiles, warm cream paper `#F6F0E4`, navy ink `#16213A`, brick `#A9482A` for warnings, moss for good news.
+  - Wordmark: "KNOW YOUR BILL" + "NOLA" as letter tiles; a checkered tile band under the hero.
+  - Fonts: Zilla Slab (headings only), Public Sans (body and ALL numbers; the slab font's numerals are uneven).
+  - Light theme only (dark mode read as a coding tool to older users). Mobile-first. Bigger-text toggle on every page.
+  - Charts: Chart.js 4.4.1 (cdnjs). Map: Leaflet 1.9.4 + OpenStreetMap tiles.
 - **Keep the design tokens consistent** across future pages.
 
 ### Part 2 (done Oct 28): data exploration and property lookup
@@ -461,6 +466,7 @@ The five starter questions were run in the live page; screenshots are attached s
 | S15 | Orleans Parish Assessor — Homestead & SAL page (read Oct 28, 2026 in a browser; the site blocks bots). A text copy is saved as `assessor_homestead_sal_2026-10-28.txt`. | https://www.nolaassessor.com/homestead-sal/ |
 | S16 | City of New Orleans 2026 Original Real Estate Tax Bills (14 checked) | https://taxbills.nola.gov/pdfs/2026/615100903.pdf (pattern: /pdfs/2026/<tax bill #>.pdf) |
 | S17 | Ballotpedia — Amendment 9 (2026) results, unofficial as of Nov 4, 2026 | https://ballotpedia.org/Louisiana_Raise_Income_Limit_to_%24150%2C000_for_Special_Property_Tax_Assessment_Amendment_%282026%29 |
+| S18 | FOX 8, Nov 5, 2026 — Council approves partial millage roll-forward (4.039 mills) | https://www.fox8live.com/2026/11/05/new-orleans-city-council-approves-millage-roll-forward-raising-taxes-slashing-budget-deficit/ |
 | P1 | Orleans Parish 2026 LTC real estate roll (one zip per district) | https://stax.latax.la.gov/TaxRollsFolder/2025/ORLEANSDISTRICT{1-7}_2026_TAXROLL.zip |
 | — | Legislative Auditor, Orleans 2024 reappraisal ($628.6M projection, used as a sanity check) | https://lla.la.gov/publicreports.nsf/0/f74bf8c6ffebdf7f86258a8d00657f6c/$file/000037d0b.pdf |
 | — | City open data, Active Short-Term Rental Licenses (ufdg-ajws) | https://data.nola.gov/Housing-Land-Use-and-Blight/Active-Short-Term-Rental-Licenses/ufdg-ajws |
@@ -469,7 +475,7 @@ The five starter questions were run in the live page; screenshots are attached s
 
 ### Open items to verify
 - Amendment 9 certification (passed on unofficial results Nov 3).
-- Nov 5 millage decision.
+- Exact 2027 city millage by tax (the Nov 5 vote set a combined +4.039 mills; the line-by-line rates come with the 2027 budget).
 - Official 2027 levee rate.
 - Exact 2027 bill due date.
 - How the Assessor handles homestead on owner-occupied doubles.
@@ -593,7 +599,12 @@ estimate = main + policeFire
   - Neighborhood comparison from `nbhd.json`, labeled as context, not proof of an error.
   - The six decision buttons became four starter-question chips in step 3.
   - Design rule: keep the page usable by an older owner on a phone: one action per step, no jargon in labels.
+- **Nov 4, 2026** — Website v1 (Vercel):
+  - Redesign: light street-tile look, hero with address box, big bill number, value→taxable→bill strip, checklist, chat panel, title-case addresses.
+  - Added the "Behind the data" section (6 pages) so the Part 2 work (EDA, dictionary, matching, outside data, testing, sources) lives on the site.
+  - Bug found in deploy: chat failed with "credit balance too low" (no API credits on the account), not a code error.
 - **Nov 4, 2026** — Part 1 feedback fixes (§11):
   - Reassessment timing wording corrected.
   - Amendment 9 updated to passed (unofficial), with a new source S17.
   - Started the move to a public website (GitHub + Vercel) so no sign-in is needed.
+- **Nov 6, 2026** — Nov 5 millage vote added (partial 4.039-mill roll-forward, S18) to the KB, sources page, and this file. Website changes pushed to GitHub; Vercel redeploys automatically.

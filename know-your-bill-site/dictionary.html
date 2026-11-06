@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Data Dictionary · Know Your Bill NOLA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Zilla+Slab:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+<style>
+.tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:18px 0 14px}
+.tools input{flex:1;min-width:220px;font:inherit;padding:11px 13px;border:1px solid var(--line-2);border-radius:10px;background:var(--card)}
+.fbtn{font:inherit;font-size:.9rem;font-weight:600;padding:8px 13px;border-radius:999px;border:1px solid var(--line-2);background:var(--card);cursor:pointer;color:var(--ink)}
+.fbtn[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+.dict{max-height:70vh;overflow:auto}
+.dict td.f{font-weight:700;min-width:170px}
+.dict td.ex{color:var(--ink-2);font-size:.85rem;max-width:200px;word-break:break-word}
+.dict td.fill{min-width:90px}
+.fillbar{height:6px;border-radius:3px;background:#ECE4D4;margin-top:4px;overflow:hidden}
+.fillbar i{display:block;height:100%;background:var(--tile)}
+.unk li{padding:12px 0;border-bottom:1px solid var(--line)}
+.unk li:last-child{border-bottom:0}
+.legend{display:grid;gap:8px;margin-top:10px}
+</style>
+</head>
+<body data-page="dictionary">
+<div id="site-top"></div>
+<section class="subhero"><div class="wrap">
+  <p class="eyebrow">Behind the data</p>
+  <h1>Data dictionary</h1>
+  <p class="lead">All 115 columns in the 2026 Orleans Parish roll, what each one means, how full it is, and how sure I am about the meaning. "Inferred" means I worked it out from the data; "Unknown" means the file doesn't say and I couldn't tell.</p>
+  <nav class="subnav" id="subnav" aria-label="Behind the data"></nav>
+</div></section>
+
+<main class="section"><div class="wrap">
+  <div class="grid4" id="counts"></div>
+  <div class="tools">
+    <input id="q" type="search" placeholder="Search fields, e.g. homestead, freeze, value" aria-label="Search fields">
+    <div id="filters" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+  </div>
+  <p class="small muted" id="shown"></p>
+  <div class="tscroll dict"><table class="t"><thead><tr><th>Field</th><th>What it means</th><th>Status</th><th>Filled</th><th class="n">Distinct</th><th>Examples</th></tr></thead><tbody id="rows"></tbody></table></div>
+
+  <div class="grid2" style="margin-top:28px">
+    <div class="card"><h3>What I couldn't figure out</h3>
+      <ul class="clean unk" style="margin-top:8px">
+        <li><b>Ward(s).</b> Algiers is officially the 15th Ward, but every Algiers row says 13. The codes don't match official ward numbers.</li>
+        <li><b>"Living Square Feet."</b> Holds counts like 1, 2, 3 that equal Assessment Record Count, so it isn't square footage. The file has no real building size.</li>
+        <li><b>Freeze codes 2, 3, 4</b> and Value Other Exemption codes: meanings are my best guess from the data, not documented.</li>
+        <li><b>LTC Subclass Codes</b> (3400, 4000, 4020…): need the Louisiana Tax Commission's code table.</li>
+        <li><b>Place FIPS codes</b> (96007, 96009…): they move with the Ward field, and no meaning is given.</li>
+        <li><b>Special districts.</b> There's no tax district number, so the Garden District, DDD, or security-district fees can't be added to the bill estimate.</li>
+        <li><b>Act 718 phase-in.</b> Nothing marks parcels whose increase is being phased in.</li>
+        <li><b>Verified Sale Indicator</b> is "N" in every row, so real sales can only be told apart by price.</li>
+      </ul></div>
+    <div class="card"><h3>Checks that hold in every row</h3>
+      <div class="legend">
+        <div class="note">Land market value + building market value = <b>total market value</b> (100% of rows)</div>
+        <div class="note">Land assessed + building assessed = <b>total assessed value</b> (100% of rows)</div>
+        <div class="note">Total assessed − all exemptions = <b>taxable assessed value</b> (100% of rows)</div>
+        <div class="note warn"><b>Traps:</b> Year Built 1994 and Transfer Date 12/31/1994 are placeholders. Purchase prices of 0, 10, and 100 aren't sales. Taxpayer IDs are zeroed out for privacy. Owner names exist in the file but are never used by this tool.</div>
+      </div>
+      <p class="small muted" style="margin-top:14px">Join key: <code>Tax Bill #</code> = <code>Parcel ID(s)</code>. The official bill for any parcel is at <code>taxbills.nola.gov/pdfs/2026/&lt;Tax Bill #&gt;.pdf</code>.</p>
+    </div>
+  </div>
+</div></main>
+<div id="site-foot"></div>
+<script src="assets/site.js"></script>
+<script>
+const {esc}=KYB; const STAT={Confirmed:'ok',Inferred:'info',Unknown:'warn',Empty:'mute'};
+let D=[], filt='All';
+function draw(){
+  const q=document.getElementById('q').value.trim().toLowerCase();
+  const list=D.filter(r=>(filt==='All'||r.status===filt)&&(!q||(r.field+' '+r.meaning+' '+r.examples).toLowerCase().includes(q)));
+  document.getElementById('shown').textContent='Showing '+list.length+' of '+D.length+' fields';
+  document.getElementById('rows').innerHTML=list.map(r=>`<tr><td class="f">${esc(r.field)}</td><td>${esc(r.meaning)}</td><td><span class="pill ${STAT[r.status]||'mute'}">${esc(r.status)}</span></td>
+    <td class="fill">${(+r.percent_filled).toFixed(r.percent_filled%1?1:0)}%<div class="fillbar"><i style="width:${+r.percent_filled}%"></i></div></td><td class="n">${(+r.distinct_values).toLocaleString()}</td><td class="ex">${esc(String(r.examples).slice(0,80))}</td></tr>`).join('');
+}
+fetch('data/project.json').then(r=>r.json()).then(j=>{
+  D=j.dictionary; const c={}; D.forEach(r=>c[r.status]=(c[r.status]||0)+1);
+  document.getElementById('counts').innerHTML=['Confirmed','Inferred','Unknown','Empty'].map(s=>`<div class="stat"><div class="k"><span class="pill ${STAT[s]}">${s}</span></div><div class="v">${c[s]||0}</div></div>`).join('');
+  document.getElementById('filters').innerHTML=['All','Confirmed','Inferred','Unknown','Empty'].map(s=>`<button class="fbtn" aria-pressed="${s===filt}" data-s="${s}">${s}</button>`).join('');
+  document.querySelectorAll('.fbtn').forEach(b=>b.addEventListener('click',()=>{filt=b.dataset.s;document.querySelectorAll('.fbtn').forEach(x=>x.setAttribute('aria-pressed',x===b));draw();}));
+  draw();
+});
+document.getElementById('q').addEventListener('input',draw);
+</script>
+</body>
+</html>

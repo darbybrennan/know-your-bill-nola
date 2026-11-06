@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Explore the Data · Know Your Bill NOLA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Zilla+Slab:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+.chartcard{margin-bottom:22px}
+.find{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}
+.find input{flex:1;min-width:200px;font:inherit;padding:10px 12px;border:1px solid var(--line-2);border-radius:10px;background:var(--card)}
+.nbt{max-height:460px;overflow:auto}
+.nbt th{cursor:pointer;user-select:none}
+.nbt th[aria-sort]::after{content:" ↕";opacity:.4}
+.nbt th[aria-sort="ascending"]::after{content:" ↑";opacity:1}.nbt th[aria-sort="descending"]::after{content:" ↓";opacity:1}
+.minibar{display:inline-block;height:8px;background:var(--tile);border-radius:4px;vertical-align:middle;margin-right:8px}
+.xl{display:grid;gap:10px}
+.xl div{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.xl b{display:block;margin-bottom:4px}
+</style>
+</head>
+<body data-page="data">
+<div id="site-top"></div>
+<section class="subhero"><div class="wrap">
+  <p class="eyebrow">Behind the data</p>
+  <h1>What the 2026 tax roll shows</h1>
+  <p class="lead">Every number in this tool comes from the Orleans Parish 2026 real estate roll published by the Louisiana Tax Commission: one row per tax bill, 115 columns, appraisal date Jan 1, 2023. These pages show how the data was explored, cleaned, matched to addresses, and tested.</p>
+  <nav class="subnav" id="subnav" aria-label="Behind the data"></nav>
+</div></section>
+
+<main class="section"><div class="wrap">
+  <div class="grid4" id="stats" style="margin-bottom:28px"></div>
+
+  <div class="card chartcard"><div class="figrow">
+    <div><h3>1 · Who carries the tax load</h3>
+      <p class="take">Homes are 52% of market value but 70% of what gets taxed. Exempt property (churches, schools, government, nonprofits) is 21% of all value and pays 0%. Commercial's share doubles because buildings are assessed at 15%, not 10%.</p>
+      <p class="src">2026 LTC roll, 163,135 records, grouped by each record's first occupancy type.</p></div>
+    <div class="chartbox"><canvas id="c1" aria-label="Share of market value vs taxable value by property type"></canvas></div>
+  </div></div>
+
+  <div class="card chartcard"><div class="figrow">
+    <div><h3>2 · Where owners live in their homes</h3>
+      <p class="take">53.5% of homes citywide have homestead, the sign an owner lives there. Algiers is highest at 61%. The CBD/Warehouse District (33%) and Central City/Irish Channel (43%) are lowest, which points to more rentals, condos, and investors. That's also where young landlords near campus show up.</p>
+      <p class="src">Residential records only (n = 120,747). District labels list example neighborhoods from the roll, not official names.</p></div>
+    <div class="chartbox"><canvas id="c2" aria-label="Homestead share by assessment district"></canvas></div>
+  </div></div>
+
+  <div class="card chartcard">
+    <h3>3 · What a typical owner's home is worth</h3>
+    <p class="take">The median homesteaded home is valued at <b>$244,800</b> on the roll, about $50,000 under the Census median of $296,400. That gap makes sense: roll values date to Jan 2023, and the Census number is what owners think their home is worth. Hover a bar for the count.</p>
+    <div class="chartbox"><canvas id="c3" aria-label="Distribution of homestead home values"></canvas></div>
+    <p class="src"><b style="color:#16213A">■</b> band with the roll median · <b style="color:#C0663F">■</b> band with the Census median. 64,000+ homestead residential records in $50K bands; homes over $1.5M are grouped in the last bar. Census QuickFacts 2019–2023.</p>
+  </div>
+
+  <div class="card chartcard"><div class="figrow">
+    <div><h3>4 · Homestead is worth the most to modest homes</h3>
+      <p class="take">Without homestead, every home pays about 1.33% of its value a year. With homestead, a home under $100K pays a median 0.28%, a $250–300K home 1.00%, and a $1M+ home 1.26%. The flat $75,000 discount is a bigger slice of a cheaper house, which is why the tool flags homes with no homestead.</p>
+      <p class="src">Median estimated 2026 bill ÷ market value, non-frozen residential records. Excludes flat security-district fees.</p></div>
+    <div class="chartbox"><canvas id="c4" aria-label="Effective tax rate by value band, homestead vs not"></canvas></div>
+  </div></div>
+
+  <div class="card chartcard"><div class="figrow">
+    <div><h3>5 · The senior/disability freeze</h3>
+      <p class="take">18,501 homes carry a freeze code, almost all with homestead. The typical frozen home is assessed <b>24% below</b> what 10% of its current value would be. About 4,800 sit within 5% of market, likely recent freezes or homes whose value hasn't moved.</p>
+      <p class="src">Residential records with a nonzero Freeze Code. The file doesn't define freeze codes; see the data dictionary.</p></div>
+    <div class="chartbox"><canvas id="c5" aria-label="How far frozen assessments sit below market"></canvas></div>
+  </div></div>
+
+  <div class="grid2" style="margin-bottom:22px">
+    <div class="card"><h3>Checking a finding</h3>
+      <p class="take" style="color:var(--ink-2);margin-top:8px">I rebuilt the tax bill for 14 real parcels and compared each one to the City's official 2026 bill PDF. <b>10 matched within 3 cents.</b> 3 were lower because of an Act 718 phase-in, and 1 was higher because of the Garden District security millage. Adding up every parcel's estimate gives <b>$632 million</b>, close to the Legislative Auditor's $628.6M projection. <a href="testing.html">See all 14 bills →</a></p></div>
+    <div class="card"><h3>Check it yourself in Excel</h3>
+      <div class="xl" style="margin-top:10px">
+        <div><b>Homestead count → 64,873</b><code>=COUNTIF(BA:BA,"Yes")</code></div>
+        <div><b>Median homesteaded home value → $244,900</b><code>=MEDIAN(IF((BA2:BA163136="Yes")*(N2:N163136="RESIDENTIAL"),AV2:AV163136))</code></div>
+        <div><b>One bill by hand, 5920 Tchoupitoulas St → $5,258.67</b><code>=(46250-7500)*121.97/1000 + 46250*11.51/1000</code><span class="tiny muted"> Official bill: $5,258.68</span></div>
+      </div></div>
+  </div>
+
+  <div class="card">
+    <h3>Neighborhood explorer</h3>
+    <p class="take" style="color:var(--ink-2);margin-top:6px">The 352 assessor subdivisions with 20+ homes. This table powers "Compared to your neighborhood" on the home page. Click a column to sort.</p>
+    <div class="find"><input id="nbq" type="search" placeholder="Search a neighborhood, e.g. Carrollton" aria-label="Search neighborhoods"><span class="muted small" id="nbcount" style="align-self:center"></span></div>
+    <div class="tscroll nbt"><table class="t" id="nbt"><thead><tr>
+      <th data-k="0">Subdivision</th><th class="n" data-k="1">Homes</th><th class="n" data-k="2" aria-sort="descending">Median value</th><th data-k="3">Homestead share</th><th class="n" data-k="4">Owner mail in LA</th>
+    </tr></thead><tbody></tbody></table></div>
+  </div>
+</div></main>
+<div id="site-foot"></div>
+<script src="assets/site.js"></script>
+<script>
+const {money}=KYB;
+const TILE='#1E4C9A', BRICK='#C0663F', MUTE='#B9AE98', INK='#16213A';
+const pct=v=>v+'%';
+fetch('data/eda.json').then(r=>r.json()).then(d=>{
+  const h=d.headline;
+  document.getElementById('stats').innerHTML=[
+    ['Tax bills on the roll',h.records.toLocaleString()],['Homes (residential)',h.residential.toLocaleString()],
+    ['With homestead',h.homestead.toLocaleString()],['Total market value','$'+(h.total_mv/1e9).toFixed(1)+'B']
+  ].map(([k,v])=>`<div class="stat"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
+
+  new Chart(c1,{type:'bar',data:{labels:d.c1.labels.map(l=>l.replace(' (churches, schools, govt, nonprofits)','')),datasets:[
+    {label:'Share of market value',data:d.c1.mv,backgroundColor:MUTE,borderRadius:4},
+    {label:'Share of what gets taxed',data:d.c1.tx,backgroundColor:TILE,borderRadius:4}]},
+    options:{indexAxis:'y',scales:{x:{max:80,ticks:{callback:pct},grid:{color:'#EFE7D7'}},y:{grid:{display:false}}},
+      plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.x}%`,afterBody:i=>'Records: '+d.c1.counts[i[0].dataIndex].toLocaleString()}}}}});
+
+  new Chart(c2,{type:'bar',data:{labels:d.c2.labels,datasets:[{label:'Homes with homestead',data:d.c2.pct,
+      backgroundColor:d.c2.pct.map(v=>v>=d.c2.city?TILE:'#7E9BCB'),borderRadius:4}]},
+    options:{indexAxis:'y',scales:{x:{min:0,max:70,ticks:{callback:pct,stepSize:10},grid:{color:'#EFE7D7'}},y:{grid:{display:false},ticks:{font:{size:12}}}},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.parsed.x}% of ${d.c2.n[c.dataIndex].toLocaleString()} homes`,afterLabel:()=>`Citywide: ${d.c2.city}%`}}}}});
+
+  const lab3=d.c3.edges.slice(0,-1).map((e,i)=>i===d.c3.counts.length-1?'$1.45M+':'$'+(e/1000)+'K');
+  const medIdx=Math.floor(d.c3.median/50000), cenIdx=Math.floor(d.c3.census/50000);
+  new Chart(c3,{type:'bar',data:{labels:lab3,datasets:[{label:'Homestead homes',data:d.c3.counts,
+      backgroundColor:d.c3.counts.map((_,i)=>i===medIdx?INK:i===cenIdx?BRICK:TILE),borderRadius:3,barPercentage:.95,categoryPercentage:.95}]},
+    options:{scales:{x:{grid:{display:false},ticks:{maxRotation:0,autoSkip:true,maxTicksLimit:10}},y:{grid:{color:'#EFE7D7'},title:{display:true,text:'Homes'}}},
+      plugins:{legend:{display:false},tooltip:{callbacks:{title:i=>{const k=i[0].dataIndex;return k===d.c3.counts.length-1?'$1.45M and up':`$${d.c3.edges[k]/1000}K – $${d.c3.edges[k+1]/1000}K`;},
+        label:c=>c.parsed.y.toLocaleString()+' homes',afterLabel:c=>c.dataIndex===medIdx?'Roll median $244,800 is in this band':c.dataIndex===cenIdx?'Census median $296,400 is in this band':''}}}}});
+
+  new Chart(c4,{type:'line',data:{labels:d.c4.bands,datasets:[
+    {label:'No homestead (rentals, second homes)',data:d.c4.nohs,borderColor:BRICK,backgroundColor:BRICK,pointRadius:4,borderWidth:2.5},
+    {label:'Homestead (owner lives there)',data:d.c4.hs,borderColor:TILE,backgroundColor:TILE,pointRadius:4,borderWidth:2.5}]},
+    options:{scales:{y:{min:0,max:1.6,ticks:{callback:v=>v.toFixed(1)+'%'},grid:{color:'#EFE7D7'},title:{display:true,text:'Yearly bill as % of value'}},x:{grid:{display:false},ticks:{font:{size:11}}}},
+      plugins:{legend:{position:'bottom'},tooltip:{mode:'index',intersect:false,callbacks:{label:c=>`${c.dataset.label.split(' (')[0]}: ${c.parsed.y.toFixed(2)}%`,
+        afterBody:i=>{const k=i[0].dataIndex;const s=(d.c4.nohs[k]-d.c4.hs[k])/100;return `Homestead saves about ${(s*100).toFixed(2)} points`;}}}}}});
+
+  new Chart(c5,{type:'bar',data:{labels:d.c5.edges.slice(0,-1).map(e=>e+'%'),datasets:[{label:'Frozen homes',data:d.c5.counts,backgroundColor:TILE,borderRadius:3,barPercentage:.95,categoryPercentage:.95}]},
+    options:{scales:{x:{grid:{display:false},title:{display:true,text:'How far below 10% of current value the frozen assessment sits'}},y:{grid:{color:'#EFE7D7'}}},
+      plugins:{legend:{display:false},tooltip:{callbacks:{title:i=>`${d.c5.edges[i[0].dataIndex]}–${d.c5.edges[i[0].dataIndex+1]}% below`,label:c=>c.parsed.y.toLocaleString()+' homes'}}}}});
+});
+
+// Neighborhood explorer
+let rows=[], sortK=2, sortDir=-1;
+const tb=document.querySelector('#nbt tbody');
+function draw(){
+  const q=document.getElementById('nbq').value.trim().toUpperCase();
+  const list=rows.filter(r=>!q||r[0].includes(q)).sort((a,b)=>(a[sortK]>b[sortK]?1:a[sortK]<b[sortK]?-1:0)*sortDir);
+  document.getElementById('nbcount').textContent=list.length+' of '+rows.length;
+  tb.innerHTML=list.map(r=>`<tr><td>${KYB.esc(KYB.nice(r[0]))}</td><td class="n">${r[1].toLocaleString()}</td><td class="n">${money(r[2])}</td><td><span class="minibar" style="width:${r[3]*0.9}px"></span>${r[3]}%</td><td class="n">${r[4]}%</td></tr>`).join('');
+}
+fetch('data/nbhd.json').then(r=>r.json()).then(j=>{ rows=Object.entries(j).map(([k,v])=>[k,...v]); draw(); });
+document.getElementById('nbq').addEventListener('input',draw);
+document.querySelectorAll('#nbt th').forEach(th=>th.addEventListener('click',()=>{
+  const k=+th.dataset.k; sortDir = sortK===k ? -sortDir : (k===0?1:-1); sortK=k;
+  document.querySelectorAll('#nbt th').forEach(t=>t.removeAttribute('aria-sort'));
+  th.setAttribute('aria-sort',sortDir>0?'ascending':'descending'); draw();
+}));
+</script>
+</body>
+</html>

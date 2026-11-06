@@ -2,8 +2,13 @@
 
 Student prototype (Tulane, AI & Real Estate, Fall 2026). Look up any Orleans Parish property in the 2026 tax roll, see its value, exemptions and an estimated 2026 tax bill, compare it to the neighborhood, and ask sourced questions about exemptions and appeals. Not legal or tax advice.
 
+## Pages
+- `index.html`: the tool (lookup, bill card, neighborhood compare, chat)
+- `data.html`, `dictionary.html`, `matching.html`, `outside-data.html`, `testing.html`, `sources.html`: "Behind the data"
+
 ## Files
-- `index.html` — the whole page (lookup, bill card, neighborhood compare, chat UI)
+- `assets/site.css`, `assets/site.js`: shared design and header/footer
+- `data/eda.json`, `data/project.json`: chart data, data dictionary, test results
 - `matcher.js` — turns a typed address into tax-roll format and finds the parcel
 - `data/b_*.json` — 2026 Orleans Parish roll (Louisiana Tax Commission), trimmed, split by street initial; no owner names
 - `data/nbhd.json` — neighborhood medians

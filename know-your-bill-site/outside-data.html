@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Outside Data · Know Your Bill NOLA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Zilla+Slab:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+#map .leaflet-tile-pane{filter:saturate(.45) sepia(.15) brightness(1.03)}
+#map{height:460px;border-radius:var(--r);border:1px solid var(--line);z-index:0}
+.mkey{display:flex;gap:18px;flex-wrap:wrap;font-size:.9rem;margin-top:10px;color:var(--ink-2)}
+.mkey span::before{content:"";display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+.mkey .n::before{background:#1E4C9A}.mkey .o::before{background:#8A8577}.mkey .c::before{background:#C0663F}
+.kv{display:grid;grid-template-columns:170px 1fr;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--card)}
+.kv div{padding:10px 14px;border-bottom:1px solid var(--line);font-size:.94rem}
+.kv div:nth-child(odd){background:var(--paper-2);font-weight:600;color:var(--ink-2)}
+.kv div:nth-last-child(-n+2){border-bottom:0}
+@media (max-width:620px){.kv{grid-template-columns:1fr}.kv div:nth-child(odd){border-bottom:0;padding-bottom:2px}}
+.big-callout{font-family:var(--display);font-size:1.35rem;line-height:1.35}
+</style>
+</head>
+<body data-page="outside">
+<div id="site-top"></div>
+<section class="subhero"><div class="wrap">
+  <p class="eyebrow">Behind the data</p>
+  <h1>Outside data</h1>
+  <p class="lead">Two outside sources, both pulled by API: the City's short-term rental licenses, used to stress-test the address matcher at scale and to see who rents out what, and the U.S. Census, used to define who the tool is for and to double-check addresses.</p>
+  <nav class="subnav" id="subnav" aria-label="Behind the data"></nav>
+</div></section>
+
+<main class="section"><div class="wrap">
+  <h2>Short-term rental licenses</h2>
+  <p class="muted" style="max-width:780px;margin-top:8px">4,299 active licenses from the City of New Orleans open data portal, pulled Oct 28, 2026 and linked to the tax roll with the address matcher.</p>
+
+  <div class="figrow" style="margin-top:18px">
+    <div><div id="map" role="img" aria-label="Map of active short-term rental licenses in New Orleans"></div>
+      <div class="mkey"><span class="n">Non-commercial (owner or tenant lives on site)</span><span class="c">Commercial (whole-unit)</span><span class="o">Hotels/B&amp;Bs exempt from STR rules</span><span id="mcount"></span></div></div>
+    <div class="kv">
+      <div>Source</div><div>City of New Orleans open data, dataset <code>ufdg-ajws</code> (Socrata)</div>
+      <div>API call</div><div><code>GET https://data.nola.gov/resource/ufdg-ajws.csv?$limit=50000</code><br><span class="small muted">No key needed; the portal updates daily.</span></div>
+      <div>Pulled</div><div>Oct 28, 2026 · 4,299 rows</div>
+      <div>One row is</div><div>One active license: Commercial Owner, Operator, Non-Commercial, or Lodging Exempt (hotels/B&amp;Bs that list on platforms)</div>
+      <div>Removed on purpose</div><div>Operator name, phone, email, license-holder name</div>
+      <div>Cleaning</div><div>37 rows had a placeholder location in Texas; their coordinates were blanked</div>
+      <div>Columns I added</div><div>Match status, match method, roll tax bill #, roll address, roll homestead amount, number of candidates, no-match reason</div>
+    </div>
+  </div>
+
+  <div class="figrow" style="margin-top:30px">
+    <div class="card"><h3>Who's renting: homestead share by license type</h3>
+      <p class="muted small" style="margin-top:6px">Exact matches only. Homestead means the owner says they live there.</p>
+      <div class="chartbox" style="height:300px"><canvas id="c6"></canvas></div></div>
+    <div><p class="big-callout">Non-commercial rentals sit on a homestead parcel <b style="color:var(--tile)">75–78%</b> of the time. Commercial-owner rentals: <b style="color:var(--brick)">4%</b>.</p>
+      <p>That's the split this tool cares about for its second user, the young or small landlord. Someone renting out half of a double they live in looks very different on the roll from an investor running whole-house commercial rentals. The final version can point each one to the right exemption and license rules.</p>
+      <p class="small muted">Not in the chatbot yet. Right now it's the stress test for the address matcher: <a href="matching.html">see how 4,299 real addresses matched</a>.</p></div>
+  </div>
+
+  <h2 style="margin-top:50px">U.S. Census</h2>
+  <p class="muted" style="max-width:780px;margin-top:8px">Census numbers set who the tool is designed for and how it's written.</p>
+  <div class="grid4" style="margin-top:16px">
+    <div class="stat"><div class="k">Homes lived in by the owner</div><div class="v">50.5%</div></div>
+    <div class="stat"><div class="k">Median owner-occupied home value</div><div class="v">$296,400</div></div>
+    <div class="stat"><div class="k">Median household income</div><div class="v">≈ $55K</div></div>
+    <div class="stat"><div class="k">Residents 65 and older</div><div class="v">≈ 17%</div></div>
+  </div>
+  <p class="small muted" style="margin-top:8px">Census QuickFacts, New Orleans city, 2019–2023 American Community Survey.</p>
+  <div class="grid3" style="margin-top:18px">
+    <div class="card"><h3>How it shaped the design</h3><p style="margin-top:8px">Half of households own, so homeowners are the main user. A $55K median income and no finance background means an 8th-grade reading level, short answers, and the math hidden until asked for.</p></div>
+    <div class="card"><h3>Why the senior freeze is front and center</h3><p style="margin-top:8px">About 1 in 6 residents is 65+. The freeze is the biggest thing an older owner might be missing, so the bill card flags it on every homestead home without one.</p></div>
+    <div class="card"><h3>Checking the roll against the Census</h3><p style="margin-top:8px">The Census median home value ($296,400, owner-reported) sits about $50K above the roll's median homestead value ($244,800, Jan 2023 values). See <a href="data.html">chart 3</a>. The Census Geocoder also confirmed 234 of 258 addresses the matcher missed (<a href="matching.html">details</a>).</p></div>
+  </div>
+  <div class="note" style="margin-top:20px">Next for the final draft: neighborhood-level Census data from the course files (income, age, and ownership by tract) to put each home's numbers in context.</div>
+</div></main>
+<div id="site-foot"></div>
+<script src="assets/site.js"></script>
+<script>
+fetch('data/eda.json').then(r=>r.json()).then(d=>{
+  const map=L.map('map',{preferCanvas:true,scrollWheelZoom:false}).setView([29.955,-90.075],12);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
+  const pts=d.str_pts.filter(p=>p[0]>29.8&&p[0]<30.2&&p[1]>-90.2&&p[1]<-89.6);
+  pts.forEach(p=>L.circleMarker([p[0],p[1]],{radius:3,stroke:false,fillOpacity:.6,fillColor:p[2]==='C'?'#C0663F':p[2]==='N'?'#1E4C9A':'#8A8577'}).addTo(map));
+  document.getElementById('mcount').textContent=pts.length.toLocaleString()+' licenses with a location';
+});
+new Chart(c6,{type:'bar',data:{labels:['Owner-operator, non-commercial','Non-commercial STR','Commercial operator','Lodging exempt (hotels, B&Bs)','Commercial owner'],
+  datasets:[{data:[78,75,36,33,4],backgroundColor:['#1E4C9A','#1E4C9A','#7E9BCB','#7E9BCB','#C0663F'],borderRadius:4}]},
+  options:{indexAxis:'y',scales:{x:{max:100,ticks:{callback:v=>v+'%'},grid:{color:'#EFE7D7'}},y:{grid:{display:false},ticks:{font:{size:12}}}},
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.x+'% on a homestead parcel',afterLabel:c=>'Matched licenses: '+[911,790,138,177,854][c.dataIndex]}}}}});
+</script>
+</body>
+</html>

@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sources and Method · Know Your Bill NOLA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Zilla+Slab:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+<style>
+.arch{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;align-items:stretch}
+@media (max-width:860px){.arch{grid-template-columns:1fr 1fr}}
+@media (max-width:520px){.arch{grid-template-columns:1fr}}
+.arch div{background:var(--card);border:1px solid var(--line);border-top:4px solid var(--tile);border-radius:12px;padding:14px}
+.arch b{display:block;margin-bottom:4px}
+.arch span{font-size:.9rem;color:var(--ink-2)}
+.rules{counter-reset:r;list-style:none;padding:0;margin:0;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:760px){.rules{grid-template-columns:1fr}}
+.rules li{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px 12px 52px;position:relative;font-size:.95rem}
+.rules li::before{counter-increment:r;content:counter(r);position:absolute;left:12px;top:12px;width:28px;height:28px;border-radius:7px;background:var(--tile-soft);color:var(--tile);display:grid;place-items:center;font-weight:700}
+.src td:first-child{font-weight:700;white-space:nowrap;color:var(--tile)}
+</style>
+</head>
+<body data-page="sources">
+<div id="site-top"></div>
+<section class="subhero"><div class="wrap">
+  <p class="eyebrow">Behind the data</p>
+  <h1>Sources and method</h1>
+  <p class="lead">How the tool is built, the rules the chatbot follows, and every source it is allowed to use.</p>
+  <nav class="subnav" id="subnav" aria-label="Behind the data"></nav>
+</div></section>
+
+<main class="section"><div class="wrap">
+  <h2 style="margin-bottom:14px">How it's built</h2>
+  <div class="arch">
+    <div><b>1 · Address → parcel</b><span>The matcher runs in your browser and loads only the slice of the roll for that street's first letter. Your address never leaves the page.</span></div>
+    <div><b>2 · Bill estimate</b><span>Computed by page code, not by AI, with the 2026 millage. Checked against 14 real bills.</span></div>
+    <div><b>3 · Question → Claude</b><span>Your question plus the one property on screen go to a small server function that calls Claude with fixed rules and a 18-source knowledge base.</span></div>
+    <div><b>4 · Answer with sources</b><span>Claude returns an answer, source tags, and a handoff. The page turns tags into links and labels anything unsourced "unverified."</span></div>
+  </div>
+  <p class="small muted" style="margin-top:12px">Hosted on Vercel from GitHub. The API key lives only on the server. Rate-limited per visitor. Nothing typed is stored. Built with Claude Code; the project's instruction file (CLAUDE.md) is in the GitHub repo.</p>
+
+  <h2 style="margin:40px 0 14px">The chatbot's rules</h2>
+  <ol class="rules">
+    <li><b>Cite a source for every fact.</b> No source means the answer is labeled unverified.</li>
+    <li><b>Say "I don't know"</b> when the sources don't cover it, then name the right office. Never guess numbers, dates, or rules.</li>
+    <li><b>No legal or tax advice.</b> Explain how things work and what evidence counts; never say "you should appeal."</li>
+    <li><b>Always offer a person.</b> Every answer ends with the best office to call.</li>
+    <li><b>Say it's a student prototype</b> on every page. Never claim to be an official tool.</li>
+    <li><b>Plain language.</b> 8th-grade reading level, short answers, the math shown step by step.</li>
+    <li><b>Be honest about time.</b> Name the tax year, flag deadlines that passed, never call a pending vote decided.</li>
+    <li><b>Orleans Parish only.</b> Renters get a one-line redirect.</li>
+    <li><b>Privacy.</b> Public records only, no owner names, no guessing about an owner's situation.</li>
+    <li><b>One property at a time.</b> A new lookup starts a fresh chat.</li>
+  </ol>
+
+  <h2 style="margin:40px 0 14px">Knowledge base sources</h2>
+  <div class="tscroll src"><table class="t"><thead><tr><th>ID</th><th>Source</th></tr></thead><tbody>
+    <tr><td>S1</td><td><a href="https://council.nola.gov/resources/property-tax-assessments-and-appeals/" target="_blank" rel="noopener">New Orleans City Council: Property Tax Assessments &amp; Appeals (Tax Year 2027)</a></td></tr>
+    <tr><td>S2</td><td><a href="https://nola.gov/next/treasury/topics/how-taxes-are-calculated/" target="_blank" rel="noopener">City of New Orleans Treasury: How taxes are calculated (2026 millage)</a></td></tr>
+    <tr><td>S3</td><td><a href="https://www.bgr.org/about-your-property-taxes/" target="_blank" rel="noopener">Bureau of Governmental Research: About Your Property Taxes</a></td></tr>
+    <tr><td>S4</td><td><a href="https://www.bgr.org/wp-content/uploads/Media-Release_New-Data-on-Property-Tax-Rates-Across-Three-Parishes_01.29.26.pdf" target="_blank" rel="noopener">BGR media release, Jan 29, 2026: tax rates across three parishes</a></td></tr>
+    <tr><td>S5</td><td><a href="https://www.fox8live.com/2026/09/28/new-orleans-property-owners-could-pay-more-under-proposed-2027-tax-increase/" target="_blank" rel="noopener">FOX 8, Sept 28, 2026: proposed 2027 millage roll-forward</a></td></tr>
+    <tr><td>S6</td><td><a href="https://www.nolaassessor.com/2026/07/13/2027-assessment-rolls-open-for-public-inspection-july-15-to-august-17/" target="_blank" rel="noopener">Orleans Parish Assessor: 2027 rolls open July 15–Aug 17</a></td></tr>
+    <tr><td>S7</td><td><a href="https://nola.gov/property-tax/" target="_blank" rel="noopener">City of New Orleans: Pay Property Tax / Treasury FAQ</a></td></tr>
+    <tr><td>S8</td><td><a href="https://news.ballotpedia.org/2022/05/25/louisiana-legislature-refers-two-constitutional-amendments-to-2022-ballot-concerning-property-taxes/" target="_blank" rel="noopener">Ballotpedia: Louisiana special assessment level and homestead (2022)</a></td></tr>
+    <tr><td>S9</td><td><a href="https://legis.la.gov/LEGIS/ViewDocument.aspx?d=1414405" target="_blank" rel="noopener">Louisiana Legislature: HB 300 (2025), freeze income limit (Amendment 9)</a></td></tr>
+    <tr><td>S10</td><td><a href="https://legis.la.gov/legis/ViewDocument.aspx?d=1294799" target="_blank" rel="noopener">Louisiana Legislature: Act 172 (2022) disabled veteran exemptions</a></td></tr>
+    <tr><td>S11</td><td><a href="https://bizneworleans.com/2026-orleans-assessments-open-online-appeals-available/" target="_blank" rel="noopener">Biz New Orleans: assessments open; 2023 reassessment background</a></td></tr>
+    <tr><td>S12</td><td><a href="https://veritenews.org/guides/2025-new-orleans-election-guide/assessor-race/" target="_blank" rel="noopener">Verite News: 2025 Assessor race guide (reassessment for the 2027 tax roll)</a></td></tr>
+    <tr><td>S13</td><td><a href="https://lailluminator.com/?p=12430" target="_blank" rel="noopener">Louisiana Illuminator: 2022 amendment results (Orleans 10% cap failed)</a></td></tr>
+    <tr><td>S14</td><td><a href="https://cabl.org/whats-up-with-the-amendments-a-close-look-at-constitutional-amendment-6" target="_blank" rel="noopener">CABL: Amendment 6 explainer (2018 phase-in of 50%+ increases)</a></td></tr>
+    <tr><td>S15</td><td><a href="https://www.nolaassessor.com/homestead-sal/" target="_blank" rel="noopener">Orleans Parish Assessor: Homestead &amp; SAL (exemptions, freezes, documents)</a></td></tr>
+    <tr><td>S16</td><td><a href="https://taxbills.nola.gov/pdfs/2026/615100903.pdf" target="_blank" rel="noopener">City of New Orleans: 2026 Original Real Estate Tax Bills (14 checked)</a></td></tr>
+    <tr><td>S17</td><td><a href="https://ballotpedia.org/Louisiana_Raise_Income_Limit_to_%24150%2C000_for_Special_Property_Tax_Assessment_Amendment_%282026%29" target="_blank" rel="noopener">Ballotpedia: Amendment 9 (2026) results, unofficial as of Nov 4, 2026</a></td></tr>
+    <tr><td>S18</td><td><a href="https://www.fox8live.com/2026/11/05/new-orleans-city-council-approves-millage-roll-forward-raising-taxes-slashing-budget-deficit/" target="_blank" rel="noopener">FOX 8, Nov 5, 2026: City Council approves partial millage roll-forward</a></td></tr>
+  </tbody></table></div>
+
+  <h2 style="margin:40px 0 14px">Data sources</h2>
+  <div class="tscroll src"><table class="t"><thead><tr><th>Data</th><th>Source</th><th>Used for</th></tr></thead><tbody>
+    <tr><td>Tax roll</td><td><a href="https://stax.latax.la.gov/" target="_blank" rel="noopener">Orleans Parish 2026 real estate roll, Louisiana Tax Commission</a> (163,135 records, 115 columns)</td><td>Every value, exemption, and bill estimate</td></tr>
+    <tr><td>Tax bills</td><td><a href="https://taxbills.nola.gov/pdfs/2026/615100903.pdf" target="_blank" rel="noopener">City of New Orleans 2026 tax bill PDFs</a></td><td>Checking the bill math (14 bills)</td></tr>
+    <tr><td>STR licenses</td><td><a href="https://data.nola.gov/Housing-Land-Use-and-Blight/Active-Short-Term-Rental-Licenses/ufdg-ajws" target="_blank" rel="noopener">City open data, Active Short-Term Rental Licenses</a></td><td>Matcher stress test, landlord context</td></tr>
+    <tr><td>Geocoder</td><td><a href="https://geocoding.geo.census.gov/geocoder/" target="_blank" rel="noopener">U.S. Census Geocoder (batch API)</a></td><td>Checking unmatched addresses</td></tr>
+    <tr><td>Census</td><td><a href="https://www.census.gov/quickfacts/table/PST045215/2255000" target="_blank" rel="noopener">Census QuickFacts, New Orleans city</a></td><td>Who the users are</td></tr>
+    <tr><td>Auditor</td><td><a href="https://lla.la.gov/publicreports.nsf/0/f74bf8c6ffebdf7f86258a8d00657f6c/$file/000037d0b.pdf" target="_blank" rel="noopener">Legislative Auditor, Orleans 2024 reappraisal</a></td><td>Sanity check on the citywide total</td></tr>
+  </tbody></table></div>
+
+  <div class="note warn" style="margin-top:30px"><b>Open items.</b> Amendment 9 is passed on unofficial results until certified. On Nov 5, 2026 the Council approved a partial 4.039-mill roll-forward for 2027 bills; final 2027 rates come with the budget due Dec 1. 2027 values aren't in this data yet. How the Assessor treats homestead on an owner-occupied double isn't in any source the tool uses, so the chatbot says "I don't know."</div>
+</div></main>
+<div id="site-foot"></div>
+<script src="assets/site.js"></script>
+</body>
+</html>

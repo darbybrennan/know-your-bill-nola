@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Address Matching · Know Your Bill NOLA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Zilla+Slab:wght@600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+<style>
+.pipe{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;counter-reset:s}
+@media (max-width:860px){.pipe{grid-template-columns:1fr 1fr}}
+@media (max-width:520px){.pipe{grid-template-columns:1fr}}
+.pipe li{list-style:none;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;position:relative;box-shadow:var(--shadow)}
+.pipe li::before{counter-increment:s;content:counter(s);display:grid;place-items:center;width:32px;height:32px;border-radius:8px;background:var(--tile);color:#fff;font-family:var(--display);font-weight:700;margin-bottom:10px;box-shadow:inset 0 0 0 3px var(--tile-deep)}
+.pipe b{display:block;margin-bottom:4px}
+.pipe span{font-size:.9rem;color:var(--ink-2)}
+.demo{display:flex;gap:10px;flex-wrap:wrap}
+.demo input{flex:1;min-width:220px;font:inherit;font-size:1.05rem;padding:12px 14px;border:2px solid var(--tile);border-radius:12px;background:var(--card)}
+.trace{display:grid;grid-template-columns:200px 1fr;gap:0;margin-top:16px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--card)}
+.trace div{padding:10px 14px;border-bottom:1px solid var(--line);font-size:.95rem}
+.trace div:nth-child(odd){background:var(--paper-2);font-weight:600;color:var(--ink-2)}
+.trace div:nth-last-child(-n+2){border-bottom:0}
+@media (max-width:620px){.trace{grid-template-columns:1fr}.trace div:nth-child(odd){border-bottom:0;padding-bottom:2px}}
+.stack{display:flex;height:42px;border-radius:10px;overflow:hidden;margin:14px 0 10px;border:1px solid var(--line)}
+.stack div{display:grid;place-items:center;color:#fff;font-weight:700;font-size:.9rem;white-space:nowrap;overflow:hidden}
+.alias{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.alias span{background:var(--paper-2);border:1px solid var(--line);border-radius:8px;padding:5px 10px;font-size:.88rem}
+</style>
+</head>
+<body data-page="matching">
+<div id="site-top"></div>
+<section class="subhero"><div class="wrap">
+  <p class="eyebrow">Behind the data</p>
+  <h1>Address matching</h1>
+  <p class="lead">People type addresses like "2808 St. Charles Avenue." The tax roll stores "2808 ST CHARLES AV." The matcher (<code>matcher.js</code>, which runs right in your browser) translates one into the other and finds the parcel, without sending the address anywhere.</p>
+  <nav class="subnav" id="subnav" aria-label="Behind the data"></nav>
+</div></section>
+
+<main class="section"><div class="wrap">
+  <div class="grid3" style="margin-bottom:30px">
+    <div class="stat"><div class="k">Hand-picked test addresses found</div><div class="v">12 of 13</div></div>
+    <div class="stat"><div class="k">Non-properties correctly rejected</div><div class="v">3 of 3</div></div>
+    <div class="stat"><div class="k">Real STR addresses matched or narrowed</div><div class="v">94.2%</div></div>
+  </div>
+
+  <h2 style="margin-bottom:14px">How it works</h2>
+  <ol class="pipe" style="padding:0;margin:0 0 14px">
+    <li><b>Clean it up</b><span>Uppercase, strip punctuation, "New Orleans, LA," and the ZIP. A ZIP outside 701xx or a city like Metairie means outside the parish.</span></li>
+    <li><b>Pull out the parts</b><span>House number (first number of a range like 1816-1818), unit (Apt, Unit, #), and street suffix: Avenue → AV, Boulevard → BL.</span></li>
+    <li><b>Translate names</b><span>Spell names the way the roll does. N/S/E/W gets dropped because the roll drops it.</span></li>
+    <li><b>Look it up</b><span>Number + street name, narrowed by suffix and unit. No exact hit? Try a 1–2 letter typo fix, then a house number 2–4 away (doubles).</span></li>
+    <li><b>Ask if unsure</b><span>Several parcels match? The owner picks. North and South Broad both have a "1000 BROAD ST."</span></li>
+  </ol>
+  <div class="alias"><span>Saint → ST</span><span>General → GEN</span><span>Ninth → 9TH</span><span>Martin Luther King → MARTIN L KING</span><span>Jefferson Davis → NORMAN C FRANCIS</span><span>Governor → GOV</span><span>De Soto → DESOTO</span></div>
+
+  <div class="card" style="margin-top:30px">
+    <h3>Try the matcher</h3>
+    <p class="muted" style="margin:6px 0 14px">Type any address and watch each step. Try a typo ("1710 Prytannia St"), a double ("2511 Eagle St"), or something outside the parish ("3800 Veterans Blvd, Metairie").</p>
+    <form class="demo" id="df"><label class="sr" for="dq">Address</label><input id="dq" placeholder="e.g. 2808 St. Charles Avenue, New Orleans, LA 70115"><button class="btn" type="submit">Run it</button></form>
+    <div id="dout"></div>
+  </div>
+
+  <h2 style="margin:40px 0 14px">Test 1: 16 addresses typed like a real owner would</h2>
+  <div class="tscroll"><table class="t"><thead><tr><th>Typed address</th><th>What it tests</th><th>Result</th><th>Method</th><th>Status</th></tr></thead><tbody id="mt"></tbody></table></div>
+  <p class="small muted" style="margin-top:10px">The one real miss (2400 Martin Luther King Jr Blvd) is a real address, confirmed by the Census Geocoder, but the roll files that block under 2412–2432. The parcel exists under a different number.</p>
+
+  <h2 style="margin:40px 0 6px">Test 2: every active short-term rental license</h2>
+  <p class="muted">All 4,299 addresses from the City's STR license data (see <a href="outside-data.html">Outside data</a>) run through the matcher.</p>
+  <div class="card" style="margin-top:14px">
+    <div class="stack" id="stack"></div>
+    <div class="grid3" style="margin-top:16px">
+      <div><b style="color:var(--tile)">Exact single match · 2,973</b><p class="small muted" style="margin-top:4px">Found exactly one parcel.</p></div>
+      <div><b style="color:#7A5A12">Needs the owner to pick · 1,075</b><p class="small muted" style="margin-top:4px">993 used the neighboring-number fallback, almost all doubles and duplexes.</p></div>
+      <div><b style="color:var(--brick)">No match · 251</b><p class="small muted" style="margin-top:4px">Mostly condo buildings filed under another number (800 St Charles Ave, 711 S Peters St), plus new streets and 2 addresses outside the parish.</p></div>
+    </div>
+  </div>
+
+  <h2 style="margin:40px 0 6px">Cross-check with the Census Geocoder</h2>
+  <div class="figrow" style="margin-top:14px">
+    <div><p>I sent the 258 misses (the 251 above plus my hand-test misses) to the U.S. Census Geocoder batch API. If the Census couldn't find them either, the problem would be bad input. Instead, <b id="gm">234</b> came back as real addresses with coordinates.</p>
+      <p><b>So the misses are about how the roll numbers parcels, not about bad addresses.</b> Next step for the final version: snap those geocoded points to the City's parcel map to catch condo towers filed under one number.</p>
+      <p class="small muted">API: <code>geocoding.geo.census.gov/geocoder/locations/addressbatch</code> (free, no key).</p></div>
+    <div class="tscroll" style="max-height:340px;overflow:auto"><table class="t"><thead><tr><th>Address sent</th><th>Census result</th></tr></thead><tbody id="geo"></tbody></table></div>
+  </div>
+</div></main>
+<div id="site-foot"></div>
+<script src="assets/site.js"></script>
+<script src="matcher.js"></script>
+<script>
+const {esc,nice,money}=KYB;
+fetch('data/project.json').then(r=>r.json()).then(j=>{
+  document.getElementById('mt').innerHTML=j.match_tests.map(r=>{
+    const right=/^(match|choose)$/.test(r.match_status)||/reject|outside|not a property/i.test(r.result+r.what_it_tests);
+    const st=r.match_status==='match'?'<span class="pill ok">Found</span>':r.match_status==='choose'?'<span class="pill warn">Asks owner</span>':(/Fake|PO Box|Metairie/i.test(r.typed_address)?'<span class="pill ok">Rejected</span>':'<span class="pill bad">Missed</span>');
+    return `<tr><td><b>${esc(r.typed_address)}</b></td><td class="muted">${esc(r.what_it_tests)}</td><td>${esc(String(r.result).replace(/\s*\[\d+\w*\]/g,''))}</td><td>${esc(r.match_method||'—')}</td><td>${st}</td></tr>`;}).join('');
+  const g=j.geocoder; document.getElementById('gm').textContent=g.matched;
+  document.getElementById('geo').innerHTML=g.sample.map(r=>`<tr><td>${esc(String(r.input_address).replace(/, New Orleans, LA, ?$/,''))}</td><td>${r.census_match==='Match'?'<span class="pill ok">'+esc(r.match_type||'Match')+'</span>':'<span class="pill bad">'+esc(r.census_match)+'</span>'}</td></tr>`).join('')+`<tr><td colspan="2" class="muted small">Showing 12 of ${g.total}. Full file: census_geocoder_check.csv</td></tr>`;
+});
+const tot=4299;[[2973,'var(--tile)','Exact'],[1075,'var(--gold)','Pick'],[251,'var(--brick)','None']].forEach(([n,c,l])=>{
+  document.getElementById('stack').insertAdjacentHTML('beforeend',`<div style="width:${n/tot*100}%;background:${c}" title="${l}: ${n}">${(n/tot*100).toFixed(1)}%</div>`);});
+
+// live demo
+const loaded={}; let recs=[];
+const bucketKey=c=>/[A-Z]/.test(c[0])?c[0]:'n'+c[0];
+async function ensure(keys){ let ch=false; for(const k of keys){ if(loaded[k]) continue; try{const r=await fetch('data/b_'+k+'.json'); loaded[k]=r.ok?await r.json():[];}catch(e){loaded[k]=[];} ch=true; }
+  if(ch){ const seen=new Set(); recs=[]; for(const v of Object.values(loaded)) for(const r of v) if(!seen.has(r[0])){seen.add(r[0]);recs.push(r);} }
+  return KYBMatcher.buildIndex(recs,r=>r[1]); }
+document.getElementById('df').addEventListener('submit',async ev=>{
+  ev.preventDefault(); const q=document.getElementById('dq').value.trim(); if(!q) return;
+  const out=document.getElementById('dout'); out.innerHTML='<p class="muted" style="margin-top:14px">Running…</p>';
+  const p=KYBMatcher.parse(q); const keys=new Set(); if(p.core) keys.add(bucketKey(p.core)); if(p.coreWithDir) keys.add(bucketKey(p.coreWithDir));
+  const idx=await ensure([...keys]); const m=KYBMatcher.match(q,idx);
+  const verdict = m.status==='match'?'<span class="pill ok">Match</span> '+esc(m.hits[0].addr)+' · parcel '+esc(m.hits[0].rec[0])
+    : m.status==='choose'?'<span class="pill warn">Asks the owner</span> '+m.hits.length+' candidate'+(m.hits.length>1?'s':'')+': '+m.hits.slice(0,5).map(h=>esc(h.addr)+' (District '+h.rec[2]+')').join(', ')
+    : '<span class="pill bad">No match</span> '+esc(m.reason||'');
+  out.innerHTML=`<div class="trace">
+    <div>You typed</div><div>${esc(q)}</div>
+    <div>House number</div><div>${esc((p.nums||[]).join(', ')||'—')}</div>
+    <div>Street (roll spelling)</div><div><code>${esc(p.core||'—')}</code>${p.coreWithDir&&p.coreWithDir!==p.core?' <span class="muted small">(also tried <code>'+esc(p.coreWithDir)+'</code>)</span>':''}</div>
+    <div>Direction</div><div>${p.dir?esc(p.dir)+' <span class="muted small">(dropped, because the roll drops it)</span>':'—'}</div>
+    <div>Suffix / unit</div><div>${esc(p.suffix||'—')} / ${esc(p.unit||'—')}</div>
+    <div>ZIP / city</div><div>${esc(p.zip||'—')} / ${esc(p.city||'—')}</div>
+    <div>Method used</div><div>${esc(m.method||'—')}</div>
+    <div>Result</div><div>${verdict}</div></div>`;
+});
+</script>
+</body>
+</html>
