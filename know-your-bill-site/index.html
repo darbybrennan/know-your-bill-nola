@@ -38,7 +38,7 @@
 /* results */
 #results[hidden]{display:none}
 .res-head{display:flex;flex-wrap:wrap;gap:8px 20px;align-items:baseline;justify-content:space-between;margin-bottom:18px}
-.res-head h2{font-size:clamp(1.7rem,3.6vw,2.4rem)}
+.res-head h2{font-size:clamp(1.7rem,3.6vw,2.4rem);font-family:var(--body);letter-spacing:-.02em}
 .res-head .meta{color:var(--ink-2);font-size:.95rem}
 .billgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);gap:18px;align-items:stretch}
 @media (max-width:860px){.billgrid{grid-template-columns:1fr}}
@@ -129,7 +129,7 @@ table.mt tr:last-child td{border-bottom:0;font-size:1.05rem}
     <div>
       <p class="eyebrow">New Orleans property tax, in plain English</p>
       <h1 id="h1">What's your property tax bill, and <em>is it right?</em></h1>
-      <p class="lead">Type a New Orleans address. See the 2026 bill, the discounts on file, how it compares to the neighborhood, and what you can do about it.</p>
+      <p class="lead">Type a New Orleans address. See your 2026 bill, what changed on the new 2027 roll, the discounts on file, how it compares to the neighborhood, and what you can do about it.</p>
       <form class="search" id="lform" role="search">
         <label class="sr" for="addr">Property address</label>
         <input id="addr" type="text" autocomplete="street-address" placeholder="e.g. 1032 Hillary St">
@@ -212,14 +212,18 @@ const SOURCES = {
   S9:{t:"Louisiana Legislature – HB 300 (2025): income limit for special assessment level, Amendment 9, Nov 3, 2026 ballot",u:"https://legis.la.gov/LEGIS/ViewDocument.aspx?d=1414405"},
   S10:{t:"Louisiana Legislature – Act 172 (2022) disabled veteran exemptions digest",u:"https://legis.la.gov/legis/ViewDocument.aspx?d=1294799"},
   S11:{t:"Biz New Orleans – Orleans assessments open; 2023 reassessment background",u:"https://bizneworleans.com/2026-orleans-assessments-open-online-appeals-available/"},
-  S12:{t:"Verite News – 2025 Assessor race guide (reassessment for the 2027 tax roll)",u:"https://veritenews.org/guides/2025-new-orleans-election-guide/assessor-race/"},
+  S12:{t:"Verite News – 2025 Assessor race guide",u:"https://veritenews.org/guides/2025-new-orleans-election-guide/assessor-race/"},
   S13:{t:"Louisiana Illuminator – 2022 amendment results (Orleans 10% cap failed)",u:"https://lailluminator.com/?p=12430"},
   S14:{t:"CABL – Amendment 6 explainer (2018 statewide phase-in of 50%+ increases)",u:"https://cabl.org/whats-up-with-the-amendments-a-close-look-at-constitutional-amendment-6"},
   S15:{t:"Orleans Parish Assessor – Homestead & SAL (exemptions, freezes, documents)",u:"https://www.nolaassessor.com/homestead-sal/"},
   S16:{t:"City of New Orleans – sample 2026 Original Real Estate Tax Bill",u:"https://taxbills.nola.gov/pdfs/2026/615100903.pdf"},
   S17:{t:"Ballotpedia – Amendment 9 (2026) results, unofficial as of Nov 4, 2026",u:"https://ballotpedia.org/Louisiana_Raise_Income_Limit_to_%24150%2C000_for_Special_Property_Tax_Assessment_Amendment_%282026%29"},
   S18:{t:"FOX 8 – City Council approves partial millage roll-forward (Nov 5, 2026)",u:"https://www.fox8live.com/2026/11/05/new-orleans-city-council-approves-millage-roll-forward-raising-taxes-slashing-budget-deficit/"},
+  S19:{t:"Orleans Parish Assessor – 2024 quadrennial reassessment release (values as of Jan 1, 2023, tax years 2024–2027)",u:"https://nolaassessor.com/wp-content/uploads/sites/80/2023/07/2024-open-rolls-release.pdf"},
+  S20:{t:"Louisiana Tax Commission – Orleans 2027 tax roll files (filed Sep 4, 2026), compared with 2026 by this tool",u:"https://stax.latax.la.gov/TaxRollsFolder/2026/"},
+  C1:{t:"U.S. Census ACS 2020–2024 block group data (course data, Tulane SRED 4935)",u:"https://data.census.gov/"},
   P1:{t:"Orleans Parish 2026 real estate roll (Louisiana Tax Commission)",u:"https://stax.latax.la.gov/"},
+  P3:{t:"Orleans Parish 2027 real estate roll (Louisiana Tax Commission)",u:"https://stax.latax.la.gov/TaxRollsFolder/2026/"},
   P2:{t:"Your parcel's official 2026 City tax bill",u:"https://taxbills.nola.gov/"}
 };
 /* The knowledge base and rules live on the server in api/_prompt.js */
@@ -262,9 +266,11 @@ async function askQuestion(q){
 }
 
 /* ---------- Property lookup ---------- */
+// record fields (2027 + census added Nov 6): 23 mv27, 24 av27, 25 hx27, 26 tav27 (null if not on 2027 roll), 27 census block group FIPS ('' if not geocoded)
 // record fields: 0 bill,1 addr,2 dist,3 subdiv,4 occ,5 landMV,6 imprMV,7 totMV,8 totAV,9 homestead,10 veteran,11 firstResp,12 otherEx,13 taxAV,14 freeze,15 transferDate,16 price,17 instrument,18 status,19 hsPct,20 mail,21 landAV,22 imprAV
 const lform=document.getElementById('lform'), addrIn=document.getElementById('addr'), lout=document.getElementById('lout'), ctx=document.getElementById('ctx'), cardEl=document.getElementById('card'), resultsEl=document.getElementById('results');
 let NB=null; fetch('data/nbhd.json').then(r=>r.ok?r.json():null).then(j=>{NB=j;}).catch(()=>{});
+let BG=null; fetch('data/bg.json').then(r=>r.ok?r.json():null).then(j=>{BG=j;}).catch(()=>{});
 function nbInfo(r){ if(!NB||!r[3]||!/RESIDENTIAL/.test(r[4])||/EX/.test(r[18])) return null; const n=NB[r[3]]; if(!n) return null;
   return {name:r[3],count:n[0],median:n[1],hsPct:n[2],localPct:n[3],diff:r[7]>0?Math.round((r[7]/n[1]-1)*100):null}; }
 const loaded={}; let recs=[], index=null, current=null;
@@ -286,6 +292,38 @@ function billUrl(b){return 'https://taxbills.nola.gov/pdfs/2026/'+encodeURICompo
 function frozen(r){return String(r[14]).split(' | ').some(x=>x!=='0');}
 const nicename=s=>nice(s).replace(/\bSt\b(?= [A-Z])/g,'St.');
 
+
+function chg(a,b){ if(a==null||b==null) return null; if(a===0) return b===0?0:null; return (b/a-1)*100; }
+function yoyHtml(r){
+  const has=r[23]!=null;
+  if(!has) return `<div class="card"><h3>2026 vs. 2027</h3><p class="muted" style="margin-top:8px">This parcel number isn't on the 2027 roll. It may have been split, merged, or renumbered. Ask the Assessor at (504) 754-8811 for the 2027 record.</p></div>`;
+  const pc=chg(r[7],r[23]), same=r[23]===r[7], hsG=!r[9]&&r[25]>0, hsL=r[9]>0&&!r[25];
+  const row=(k,a,b)=>`<tr><td>${k}</td><td class="n">${money(a)}</td><td class="n">${money(b)}</td></tr>`;
+  let msg = same ? `<p style="margin:10px 0 0"><b>Same value on both rolls.</b> 98% of New Orleans homes have the same value for 2027. The values were set Jan 1, 2023 and cover tax years 2024–2027. The next reassessment is for the 2028 roll.</p>`
+    : `<p style="margin:10px 0 0"><b>Value ${pc>0?'went up':'went down'} ${Math.abs(pc).toFixed(1)}%</b> (calculated). Only about 2% of homes changed for 2027, usually because of a renovation, new construction, damage, or a correction. The Assessor can tell you what changed.</p>`;
+  if(hsG) msg+=`<p style="margin:8px 0 0" class="small"><span class="pill ok">Homestead added for 2027</span></p>`;
+  if(hsL) msg+=`<p style="margin:8px 0 0" class="small"><span class="pill bad">Homestead missing on the 2027 roll</span> If an owner still lives here, call the Assessor.</p>`;
+  return `<div class="card"><h3>2026 vs. 2027</h3>
+    <table class="t" style="margin-top:8px;font-size:.92rem"><thead><tr><th>Recorded on the roll</th><th class="n">2026</th><th class="n">2027</th></tr></thead><tbody>
+    ${row('Market value',r[7],r[23])}${row('Assessed value',r[8],r[24])}${row('Homestead',r[9],r[25])}${row('Taxable value',r[13],r[26])}</tbody></table>${msg}
+    <p class="small muted" style="margin:10px 0 0">2027 bills (mailed Dec 2026) will use 2027 rates, which aren't final. The Council approved a partial 4.039-mill increase on Nov 5, so this tool doesn't estimate a 2027 bill.</p></div>`;
+}
+function bgHtml(r){
+  const b=BG&&r[27]?BG[r[27]]:null;
+  if(!b) return BG?`<div class="card"><h3>Your Census block group</h3><p class="muted" style="margin-top:8px">No Census match for this parcel. About 14% of parcels, mostly condos and parcels without a usable street address, couldn't be placed in a block group, so there are no neighborhood Census numbers here.</p></div>`:'';
+  const pct=v=>v==null?'—':Math.round(v)+'%';
+  const usd=v=>v==null?'—':money(v);
+  return `<div class="card"><h3>Your Census block group</h3><p class="small muted" style="margin:4px 0 10px">${esc(b[0])} · U.S. Census ACS 2020–2024. Describes the neighborhood, not this home.</p>
+    <div class="figs" style="grid-template-columns:1fr 1fr;margin-bottom:0">
+      <div class="fig"><div class="k">Median household income</div><div class="v">${usd(b[1])}</div></div>
+      <div class="fig"><div class="k">Homes lived in by owner</div><div class="v">${pct(b[2])}</div></div>
+      <div class="fig"><div class="k">Residents' estimate of home value</div><div class="v">${usd(b[3])}</div></div>
+      <div class="fig"><div class="k">Tax roll median for homes here</div><div class="v">${usd(b[5])}</div></div>
+      <div class="fig"><div class="k">Median rent</div><div class="v">${usd(b[4])}</div></div>
+      <div class="fig"><div class="k">Homes with homestead (roll)</div><div class="v">${pct(b[6])}</div></div>
+    </div></div>`;
+}
+
 let chatProp=null;
 function newTopic(msg){ turns=[]; if(chat.children.length>1) add('note','<p>'+msg+'</p>'); }
 function renderCard(r){
@@ -293,6 +331,7 @@ function renderCard(r){
   current=r; const e=estimate(r);
   SOURCES.P1={t:'Orleans Parish 2026 real estate roll, District '+r[2]+' (Louisiana Tax Commission)',u:rollUrl(r[2])};
   SOURCES.P2={t:'This tool\'s 2026 bill estimate for parcel '+r[0]+' (opens the official bill to compare)',u:billUrl(r[0])};
+  SOURCES.P3={t:'Orleans Parish 2027 real estate roll, District '+r[2]+' (Louisiana Tax Commission)',u:'https://stax.latax.la.gov/TaxRollsFolder/2026/'};
   const res=/RESIDENTIAL/.test(r[4]), fz=frozen(r);
   const exs=[]; if(r[9]) exs.push('Homestead '+money(r[9])+(r[19]&&!/^100/.test(r[19])?' ('+parseFloat(r[19])+'% share)':''));
   if(r[10]) exs.push('Veteran '+money(r[10])); if(r[11]) exs.push('First responder '+money(r[11])); if(r[12]) exs.push('Other '+money(r[12]));
@@ -305,7 +344,7 @@ function renderCard(r){
   if(fz) checks.push(['good','❄','<b>This record has a freeze.</b> The assessment ('+money(r[8])+') is held below 10% of today\'s value ('+money(r[7]*0.1)+').']);
   if(r[9] && !r[10] && !r[11]) checks.push(['','★','<b>Veteran or first responder?</b> A 50%+ service-connected rating, or Orleans first-responder work, adds an exemption on top of homestead.']);
   if(/SALE/.test(r[17]) && r[16]>1000) checks.push(['','$','<b>Last sale: '+money(r[16])+'</b> on '+esc(r[15])+'. The City values it at '+money(r[7])+'. A recent sale price is one of the three kinds of evidence the Board of Review looks at.']);
-  checks.push(['','i','<b>These are 2026 numbers.</b> Values were set Jan 1, 2023. The new 2027 value was posted in July 2026 and the appeal deadline was Aug 20, 2026. Check <a href="https://www.nolaassessor.com" target="_blank" rel="noopener">nolaassessor.com</a> for it.']);
+
   const mathRows = e.ex ? '<tr><td>Exempt parcel</td><td>$0.00</td></tr>' :
    `<tr><td>Amount that gets taxed (after discounts${fz?', frozen':''})</td><td>${money(e.tav)}</td></tr>
     <tr><td>× ${e.hsM.toFixed(2)} mills (${e.alg?'Algiers':'East Bank'} rate, minus police and fire) ÷ 1,000</td><td>${cents(e.main)}</td></tr>
@@ -351,7 +390,7 @@ function renderCard(r){
     </div></details>
     <div class="two">
       <div class="card"><h3>Things to check</h3><ul class="checks">${checks.map(([c,i,t])=>`<li class="${c}"><span class="ic" aria-hidden="true">${i}</span><div>${t}</div></li>`).join('')}</ul></div>
-      <div style="display:grid;gap:18px;align-content:start">${nbHtml}
+      <div style="display:grid;gap:18px;align-content:start">${yoyHtml(r)}${nbHtml}${bgHtml(r)}
         <div class="card" style="background:var(--tile-soft);border-color:var(--tile-mid)"><h3>Questions about this home?</h3><p style="margin:8px 0 14px" class="muted">The assistant can explain this bill, the discounts, and your options.</p><button type="button" class="btn" id="askprop">Ask about ${esc(nice(r[1]))}</button></div>
       </div>
     </div>`;
@@ -373,7 +412,9 @@ function propertyContext(r){
    `Owner mailing address is ${r[20]==='L'?'in New Orleans':r[20]==='A'?'elsewhere in Louisiana':r[20]==='X'?'outside Louisiana':'unknown'} [P1]`,
    e.ex?`Estimated 2026 tax: $0 (exempt parcel) [P2]`:`Estimated 2026 tax: taxable ${money(e.tav)} x ${e.hsM} mills = ${cents(e.main)}, plus police/fire ${money(e.pfBase)} x 11.51 mills = ${cents(e.pf)}, total ${cents(e.total)}; excludes neighborhood fees and any Act 718 phase-in [P2]`,
    (r[9]||e.ex||!/RESIDENTIAL/.test(r[4]))?``:`If an owner lived here and got homestead, estimated savings ${money(e.hsSave)} per year at 2026 rates [P2]`,
-   `Note: these are 2026 values; the 2027 values posted in July 2026 are not in this data.`
+   r[23]!=null?`2027 roll (filed Sep 2026, same parcel number): market value ${money(r[23])}, assessed ${money(r[24])}, homestead ${money(r[25])}, taxable ${money(r[26])}. Calculated change in market value from 2026: ${r[23]===r[7]?'none (same value)':(chg(r[7],r[23])>0?'+':'')+chg(r[7],r[23]).toFixed(1)+'%'}. 2027 bill not estimated because 2027 rates are not final [P3]`:`This parcel number is not on the 2027 roll (may be split, merged or renumbered) [P3]`,
+   (()=>{const b=BG&&r[27]?BG[r[27]]:null; return b?`Census block group ${b[0]} (ACS 2020-2024, neighborhood not this home): median household income ${b[1]!=null?money(b[1]):'n/a'}; ${b[2]!=null?Math.round(b[2]):'n/a'}% of homes owner-occupied; residents' median estimate of home value ${b[3]!=null?money(b[3]):'n/a'}; median rent ${b[4]!=null?money(b[4]):'n/a'}; tax-roll median value for homes in this block group ${b[5]!=null?money(b[5]):'n/a'} [C1]`:``;})(),
+   `Note: 2026 and 2027 roll values both date to Jan 1, 2023; the next reassessment is for the 2028 roll.`
   ].filter(Boolean).join('\n');
 }
 async function lookup(q){

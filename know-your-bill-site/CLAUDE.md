@@ -4,7 +4,7 @@
 >
 > **Project:** Final project, AI & Real Estate (SRED 4935), Tulane, Fall 2026 · **Owner:** Darby Brennan
 > **Course name for the project:** NOLA Assessment Navigator · **Product name:** Know Your Bill NOLA
-> **Last updated:** Nov 6, 2026 (website + Nov 5 millage vote; ready for Part 2 submission)
+> **Last updated:** Nov 6, 2026 (2027 roll comparison, Census block groups, reassessment timing corrected, Nov 5 millage vote)
 
 ---
 
@@ -20,7 +20,7 @@
   - `index.html`: the tool (address lookup → big bill number + value→taxable→bill strip → "Things to check" → neighborhood compare → chat → contacts).
   - "Behind the data" section: `data.html` (5 interactive EDA charts + neighborhood explorer + Excel checks), `dictionary.html` (searchable 115-field dictionary), `matching.html` (method, live matcher demo, 16-address + 4,299-STR tests, Census Geocoder check), `outside-data.html` (STR API + map, Census), `testing.html` (14 real bills, 10 test questions, version history), `sources.html` (architecture, rules, S1–S18, data sources).
   - Shared `assets/site.css` (design tokens) and `assets/site.js` (header, footer, bigger-text toggle, `KYB.nice()` address title-casing).
-  - Data: `data/b_*.json` (roll buckets), `data/nbhd.json`, `data/eda.json` (chart data + STR points), `data/project.json` (dictionary, match tests, bill check, geocoder sample).
+  - Data: `data/b_*.json` (roll buckets; 2026 fields 0–22, 2027 fields 23–26, block group 27), `data/nbhd.json`, `data/bg.json` (Census block groups), `data/eda.json` (chart data incl. 2026→2027 and sales ratio, STR points), `data/project.json` (dictionary, match tests, bill check, geocoder sample).
 - **Privacy rule for public pages:** owner names, contact names, and mailing addresses never appear, including in data dictionary examples (redacted in `project.json`).
 - **The bot answers only from the KB plus the one property record the user looked up.** It cannot browse the web.
 - **Bill estimates are computed by page code, not by the model.** The model is told to use the numbers exactly as given.
@@ -104,8 +104,10 @@ Every bullet carries a source tag. Full links are in §8.
 - **Mass appraisal.** Values are set for the whole parish at once, using models built on sales and property data, not one-off appraisals.
 - **Reassessment cycle.** All property must be reassessed at least every four years [S3].
   - The last one: 2023, for the 2024 tax year. Total assessed values rose about 20% [S11].
-  - **The current reassessment is for the 2027 tax roll** [S12] (see §2.6).
-  - **Timing (corrected per Part 1 feedback):** the reassessment work happens in **2026**. The new values were posted and open for review and appeal July–Aug 2026 [S6], and they first show up on **2027 bills mailed in Dec 2026**. Don't call it a reassessment that is still coming in 2027.
+  - **The 2024 quadrennial reassessment set values as of Jan 1, 2023, and those values cover tax years 2024–2027** [S19].
+  - **So the 2027 tax roll is NOT a reassessment roll.** It was open for review July–Aug 2026 [S6], but the roll filed with the LTC on Sep 4, 2026 keeps the Jan 1, 2023 appraisal date, and 98% of parcels have the same market value as 2026 [S20].
+  - **The next reassessment happens during 2027 and applies to the 2028 tax roll** [S19][S12].
+  - *Correction history:* Part 1 said "the 2027 reassessment." The professor flagged it. A Nov 4 edit then moved it the wrong way ("values reset in 2026 for 2027 bills"). The 2027 roll data proved that wrong, and it was fixed Nov 6. **Don't describe 2027 as a reassessment year.**
 - **Why values change** [S1][S11]:
   - mostly market changes;
   - also renovations, major damage, or corrections;
@@ -182,8 +184,8 @@ Every bullet carries a source tag. Full links are in §8.
   - Surviving spouses also qualify [S10].
 - **First responder exemption** [S15]: an extra $25,000 of market value ($2,500 assessed) off a homestead property. It is for full-time public safety and public works employees, and volunteer firefighters, employed in Orleans Parish.
 
-### 2.6 Reassessment for the 2027 tax roll (reviewed in 2026)
-- **Where things stand (Oct 22, 2026):**
+### 2.6 The 2027 tax roll (reviewed in 2026; not a reassessment) and 2027 rates
+- **2027 roll calendar** (the annual open rolls/appeal cycle, not a reassessment):
 
 | Date | Event |
 |---|---|
@@ -255,6 +257,8 @@ Build these into the prompt and the UI. They are non-negotiable.
    - Say which tax year a number comes from.
    - Flag when a deadline has passed and what options remain.
    - Never present a pending vote as decided. Present Amendment 9 as passed on unofficial results until it is certified. The Nov 5 roll-forward is decided [S18].
+   - Never call 2027 a reassessment year, and never estimate a 2027 bill (2027 rates aren't final).
+   - Keep three kinds of numbers apart: **recorded** roll values (2026 [P1], 2027 [P3]), **calculated** values (bill estimate [P2], % change), and **Census** neighborhood estimates [C1] that describe the block group, not the home.
 8. **Scope.**
    - Orleans Parish only. Other parishes have different deadlines.
    - Renters get the one-line redirect (§1).
@@ -328,16 +332,17 @@ Each topic lists its sources and the questions owners most likely ask. These dou
   2. "I'm 65. Can my taxes be frozen?" (Answer: the assessed value is frozen, not the tax rate.)
   3. "I own a double and live in one side. Do I get homestead?" ← *not in the KB yet; the bot should say "I don't know."*
 
-### Topic D — What the reassessment for the 2027 tax roll means for owners
+### Topic D — What 2027 bills mean for owners (same values, new rates)
 - **Content:**
-  - Values reset to market.
-  - The appeal window closed Aug 20, 2026.
+  - 2027 values are the same Jan 1, 2023 values for 98% of homes [S19][S20]; changes come from renovation, new construction, damage, or corrections.
+  - The next reassessment is for the 2028 roll (work in 2027) [S19].
+  - The appeal window for 2027 values closed Aug 20, 2026.
   - Millage must roll back, but on Nov 5 the Council approved a partial 4.039-mill roll-forward for 2027 bills [S18].
   - There is no 10% cap.
   - The 50%+ phase-in rule.
   - The senior freeze income limit rises to $150K under Amendment 9 (passed Nov 3, unofficial).
   - 2027 bills arrive in December.
-- **Sources:** S1, S3, S5, S6, S9, S12, S13, S14, S18
+- **Sources:** S1, S3, S5, S6, S9, S12, S13, S14, S18, S19, S20
 - **Owners ask:**
   1. "Will my taxes go up in 2027?"
   2. "My value jumped. Is there a cap?"
@@ -467,6 +472,10 @@ The five starter questions were run in the live page; screenshots are attached s
 | S16 | City of New Orleans 2026 Original Real Estate Tax Bills (14 checked) | https://taxbills.nola.gov/pdfs/2026/615100903.pdf (pattern: /pdfs/2026/<tax bill #>.pdf) |
 | S17 | Ballotpedia — Amendment 9 (2026) results, unofficial as of Nov 4, 2026 | https://ballotpedia.org/Louisiana_Raise_Income_Limit_to_%24150%2C000_for_Special_Property_Tax_Assessment_Amendment_%282026%29 |
 | S18 | FOX 8, Nov 5, 2026 — Council approves partial millage roll-forward (4.039 mills) | https://www.fox8live.com/2026/11/05/new-orleans-city-council-approves-millage-roll-forward-raising-taxes-slashing-budget-deficit/ |
+| S19 | Orleans Parish Assessor, July 10, 2023 release — 2024 quadrennial reassessment (values as of Jan 1, 2023; tax years 2024–2027) | https://nolaassessor.com/wp-content/uploads/sites/80/2023/07/2024-open-rolls-release.pdf |
+| S20 | Louisiana Tax Commission — Orleans 2027 tax roll files (filed Sep 4, 2026); compared with 2026 by this tool | https://stax.latax.la.gov/TaxRollsFolder/2026/ (ORLEANS{1-7}_2027_{494-501}_TAXROLL.zip) |
+| C1 | U.S. Census ACS 2020–2024 block groups + parcel crosswalk + sales-ratio study (course Box folder, Nov 2, 2026) | https://tulane.box.com/s/uvljvi3zttqd1exn878urspqxhpn9fso |
+| P3 | The parcel's line(s) on the 2027 roll (AVALUE.TXT, summed) | same as S20 |
 | P1 | Orleans Parish 2026 LTC real estate roll (one zip per district) | https://stax.latax.la.gov/TaxRollsFolder/2025/ORLEANSDISTRICT{1-7}_2026_TAXROLL.zip |
 | — | Legislative Auditor, Orleans 2024 reappraisal ($628.6M projection, used as a sanity check) | https://lla.la.gov/publicreports.nsf/0/f74bf8c6ffebdf7f86258a8d00657f6c/$file/000037d0b.pdf |
 | — | City open data, Active Short-Term Rental Licenses (ufdg-ajws) | https://data.nola.gov/Housing-Land-Use-and-Blight/Active-Short-Term-Rental-Licenses/ufdg-ajws |
@@ -553,13 +562,43 @@ estimate = main + policeFire
   - 1.33% for any home without homestead.
 - 18,577 records have a freeze. The median frozen home is assessed 24% below 10% of its market value.
 
+### 10.6 The 2027 roll (added Nov 6)
+- **Source:** LTC raw files, one zip per district: `https://stax.latax.la.gov/TaxRollsFolder/2026/ORLEANS{n}_2027_{494..501}_TAXROLL.zip` (filed Sep 4, 2026). There's an open directory listing at `/TaxRollsFolder/2026/`.
+- **Format:** `~`-quoted CSV text files. Used: `AVALUE.TXT`, one line per value piece (unit L = land, I = building, Y = other).
+  - Columns (1-based): 3 parcel, 4 market value, 5 assessed, 6 homestead, 7 taxable, 8 vet/first-responder (inferred), 9 unit, 10 subclass, 11–18 unknown.
+  - Sum by parcel.
+- **Validated first on 2026:** the same parser on the raw 2026 District 1 file reproduced the cleaned roll's market, assessed, homestead, and taxable totals for 100% of 10,643 parcels.
+- **Match:** by parcel number (`Tax Bill #`). 162,939 of 163,135 matched (99.9%); 196 dropped; 505 new.
+- **Findings:**
+  - Appraisal date is still 01/01/2023, and 98.0% of parcels have an unchanged market value.
+  - 2,430 homes changed: 1,781 up and 649 down (changes among them range widely; the median change is +23%).
+  - Homestead turnover: 1,615 gained and 2,156 lost (net −541).
+  - Total market value: $75.65B → $76.90B.
+- **In the site:** bucket records gained fields 23–26 (2027 MV, AV, homestead, taxable; null if not on the 2027 roll). The card shows 2026 vs 2027 and the chat gets them as [P3]. **No 2027 bill estimate** (rates not final).
+- **Owner names:** `ASSMT.TXT` and `OWNER.TXT` contain them. Never load them.
+
+### 10.7 Census block groups (course data, added Nov 6)
+- **Files** (course Box, "Census Block Group Analysis"):
+  - `parcel_blockgroup_crosswalk.csv` (id, bg, lon, lat, exact): 140,850 parcels = 86% of the roll.
+  - `bg_merged.csv` (439 block groups, ACS 2020–2024 + roll aggregates).
+  - `results.json` (correlations, regression, sales ratio study).
+- **Verified:** recomputing the median residential MV per block group from roll + crosswalk matches `bg_merged.med_res_value` within 1% for 98.6% of 428 block groups.
+- **In the site:**
+  - Record field 27 = block group FIPS.
+  - `data/bg.json` = [name, median income, % owner-occupied, ACS home value, median rent, roll median value, % homestead, homes, population]. **Race fields are deliberately left off the home card.**
+  - The chat gets the block group as [C1], labeled "neighborhood, not this home."
+- **Sales ratio** (course analysis):
+  - 8,106 sales; median assessment/sale ratio 0.933.
+  - COD 12.9; PRD 1.054 (above the 1.03 target).
+  - The lowest price decile has a ratio of 1.18 (assessed above sale price), which indicates mild regressivity at the bottom.
+
 ---
 
 ## 11. Part 1 instructor feedback and what changed (Nov 4, 2026)
 
 | Feedback | Status | Where |
 |---|---|---|
-| Correct the reassessment-in-2027 vs. 2027-roll-reviewed-in-2026 distinction | **Fixed.** Wording now says the reassessment for the 2027 roll was reviewed in 2026 and hits Dec 2026 bills. Updated in the KB [S12] and the source titles too. | §2.2, §2.6, Topic D |
+| Correct the reassessment-in-2027 vs. 2027-roll-reviewed-in-2026 distinction | **Fixed Nov 6, using the data.** The 2027 tax roll (reviewed July–Aug 2026) keeps the Jan 1, 2023 values: 98% of parcels are unchanged [S20], and the Assessor's 2023 release says those values cover tax years 2024–2027 [S19]. The reassessment *activity* happens in 2027, for the 2028 roll. (A Nov 4 edit had moved the wording the wrong way; the 2027 roll caught it.) | §2.2, §2.6, Topic D, §10.6 |
 | Add the official homestead application steps | **Done in Part 2.** Documents, appointment, and who must attend, from the Assessor's page [S15]. | §2.5, KB |
 | Fix and retest the two incomplete tax estimates | **Fixed.** Bill math now runs in page code, not the model (§10.2). It matches 10 of 14 real 2026 bills within $0.03, and the other 4 are explained (Act 718, Garden District). The $300K homestead example now totals **$3,089.63** (Topic B). Retested in the Part 2 test questions. | §4 Topic B, §10.2, Part 2 doc §5 |
 | Verify current exemption thresholds | **Verified.** Homestead $75K market value / $7,500 assessed [S15]. Freeze income limit $102,700 for 2026 [S15], rising to $150K under Amendment 9 [S9][S17]. Veteran tiers per Act 172 [S10]. First responder $25K [S15]. | §2.5 |
@@ -608,3 +647,9 @@ estimate = main + policeFire
   - Amendment 9 updated to passed (unofficial), with a new source S17.
   - Started the move to a public website (GitHub + Vercel) so no sign-in is needed.
 - **Nov 6, 2026** — Nov 5 millage vote added (partial 4.039-mill roll-forward, S18) to the KB, sources page, and this file. Website changes pushed to GitHub; Vercel redeploys automatically.
+- **Nov 6, 2026** — 2027 roll + Census (v7):
+  - Downloaded the Orleans 2027 roll from the LTC and matched it to 2026 by parcel (99.9%).
+  - Found 98% of values unchanged, which proved that 2027 is not a reassessment year. Corrected the KB, the card, and this file (§2.2, §2.6, Topic D, §11).
+  - Added 2026-vs-2027 to every home card and the chat context [P3], plus chart 6.
+  - Added Census block group context from the course crosswalk [C1] and the sales-ratio findings to the Outside data page.
+  - Added test questions 11–13 (year-to-year, missing record, cannot answer). Data verified; chatbot answers pending API credits.

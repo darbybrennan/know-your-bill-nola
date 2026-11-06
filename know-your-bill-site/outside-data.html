@@ -28,7 +28,7 @@
 <section class="subhero"><div class="wrap">
   <p class="eyebrow">Behind the data</p>
   <h1>Outside data</h1>
-  <p class="lead">Two outside sources, both pulled by API: the City's short-term rental licenses, used to stress-test the address matcher at scale and to see who rents out what, and the U.S. Census, used to define who the tool is for and to double-check addresses.</p>
+  <p class="lead">Three outside sources: the City's short-term rental licenses (pulled by API) to stress-test the address matcher and see who rents out what; the 2027 tax roll (downloaded from the Louisiana Tax Commission) for the year-over-year comparison; and U.S. Census data, both citywide and by block group, for who the tool is for and the neighborhood context on each home.</p>
   <nav class="subnav" id="subnav" aria-label="Behind the data"></nav>
 </div></section>
 
@@ -73,7 +73,27 @@
     <div class="card"><h3>Why the senior freeze is front and center</h3><p style="margin-top:8px">About 1 in 6 residents is 65+. The freeze is the biggest thing an older owner might be missing, so the bill card flags it on every homestead home without one.</p></div>
     <div class="card"><h3>Checking the roll against the Census</h3><p style="margin-top:8px">The Census median home value ($296,400, owner-reported) sits about $50K above the roll's median homestead value ($244,800, Jan 2023 values). See <a href="data.html">chart 3</a>. The Census Geocoder also confirmed 234 of 258 addresses the matcher missed (<a href="matching.html">details</a>).</p></div>
   </div>
-  <div class="note" style="margin-top:20px">Next for the final draft: neighborhood-level Census data from the course files (income, age, and ownership by tract) to put each home's numbers in context.</div>
+
+  <h3 style="margin-top:40px;font-size:1.45rem">Census block groups (course data)</h3>
+  <div class="figrow" style="margin-top:12px">
+    <div>
+      <p>The course Box folder (posted Nov 2, 2026) has a crosswalk that places each parcel on the 2026 roll in its <b>2020 census block group</b>, along with American Community Survey (ACS 2020–2024) numbers for each of the 439 block groups. A block group is a few city blocks, about 600 to 3,000 people.</p>
+      <p><b>How the tool uses it:</b> after a lookup, each home's card shows its block group's median income, how many homes are owner-occupied, median rent, and what residents say homes are worth. The card labels these as neighborhood numbers, not facts about that house.</p>
+      <p><b>Can it be matched reliably?</b> 86% of parcels have a block group (140,850 of 163,135). The other 14%, mostly condos and parcels without a usable address, show no Census card. Block-group survey numbers also have wide margins of error, so the tool shows them as context only.</p>
+      <p class="note" style="margin-top:6px"><b>My check:</b> I recomputed the median home value for each block group from the roll and the crosswalk. It matched the course file within 1% for <b>98.6% of 428 block groups</b> (exact for 87.9%). The small gaps come from slightly different definitions of "residential."</p>
+    </div>
+    <div class="card"><h3>Are cheaper homes assessed fairly?</h3>
+      <p class="muted small" style="margin-top:6px">Assessed value ÷ sale price, 8,106 sales, by price level. 100% would mean assessed at exactly the sale price.</p>
+      <div class="chartbox" style="height:280px"><canvas id="c7" aria-label="Assessment to sale price ratio by price decile"></canvas></div>
+      <p class="small" style="margin-top:10px" id="ratiotxt"></p>
+      <p class="src">Sales ratio study from the course analysis (Orleans Block Group Analysis, Nov 2026). IAAO targets: COD ≤ 15, PRD 0.98–1.03.</p></div>
+  </div>
+  <div class="card" style="margin-top:20px"><h3>Block groups by income (course analysis)</h3>
+    <p class="muted small" style="margin:6px 0 12px">343 block groups with 20+ homes, split into fifths by median household income. "Residents' estimate" is the ACS self-reported home value.</p>
+    <div class="tscroll"><table class="t" id="quint"><thead><tr><th>Income fifth</th><th class="n">Median income</th><th class="n">Roll median value</th><th class="n">Residents' estimate</th><th class="n">Roll ÷ estimate</th><th class="n">Homestead</th><th class="n">Vacant lots</th></tr></thead><tbody></tbody></table></div>
+    <p class="small" style="margin-top:12px">Across every income level the roll sits <b>22–28% below</b> what residents say their homes are worth, with the biggest gap in the lowest-income block groups. That fits 2023 values versus 2020–2024 survey answers. A neighborhood model in the same analysis explains 75% of the variation in block-group home values. Education is the strongest single predictor (R² 0.70 alone vs. 0.39 for income), and the patterns reflect the city's history of segregation and lending, not just one factor.</p>
+  </div>
+
 </div></main>
 <div id="site-foot"></div>
 <script src="assets/site.js"></script>
@@ -89,6 +109,15 @@ new Chart(c6,{type:'bar',data:{labels:['Owner-operator, non-commercial','Non-com
   datasets:[{data:[78,75,36,33,4],backgroundColor:['#1E4C9A','#1E4C9A','#7E9BCB','#7E9BCB','#C0663F'],borderRadius:4}]},
   options:{indexAxis:'y',scales:{x:{max:100,ticks:{callback:v=>v+'%'},grid:{color:'#EFE7D7'}},y:{grid:{display:false},ticks:{font:{size:12}}}},
     plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.x+'% on a homestead parcel',afterLabel:c=>'Matched licenses: '+[911,790,138,177,854][c.dataIndex]}}}}});
+
+fetch('data/eda.json').then(r=>r.json()).then(d=>{
+  const q=d.ratio; const dec=q.by_decile;
+  new Chart(c7,{type:'bar',data:{labels:dec.map(x=>'$'+(x.price>=1e6?(x.price/1e6)+'M':Math.round(x.price/1000)+'K')),datasets:[{data:dec.map(x=>+(x.ratio*100).toFixed(1)),backgroundColor:dec.map(x=>x.ratio>1?'#C0663F':'#1E4C9A'),borderRadius:3}]},
+    options:{scales:{y:{min:0,max:130,ticks:{callback:v=>v+'%'},grid:{color:'#EFE7D7'}},x:{grid:{display:false},title:{display:true,text:'Median sale price in each tenth of sales'}}},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>'Assessed at '+c.parsed.y+'% of sale price',afterLabel:c=>dec[c.dataIndex].n+' sales'}}}}});
+  document.getElementById('ratiotxt').innerHTML=`Overall, homes are assessed at <b>${(q.median*100).toFixed(1)}%</b> of sale price (COD ${q.cod}, within the usual target). But the cheapest tenth of sales was assessed at <b>${(dec[0].ratio*100).toFixed(0)}%</b> of price, above what they sold for. That pushes the PRD to ${q.prd}, a little over the 1.03 target, which points to mild regressivity at the bottom. For an owner of a lower-priced home, a recent sale price is strong evidence at the Board of Review.`;
+  document.querySelector('#quint tbody').innerHTML=q.quint.map(x=>`<tr><td>${x.inc_q}</td><td class="n">${KYB.money(x.income)}</td><td class="n">${KYB.money(x.value)}</td><td class="n">${KYB.money(x.acs_value)}</td><td class="n">${(x.ratio_acs*100).toFixed(0)}%</td><td class="n">${x.homestead.toFixed(0)}%</td><td class="n">${x.vacant_lot.toFixed(0)}%</td></tr>`).join('');
+});
 </script>
 </body>
 </html>

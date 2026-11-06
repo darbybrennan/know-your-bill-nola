@@ -26,7 +26,7 @@
 <section class="subhero"><div class="wrap">
   <p class="eyebrow">Behind the data</p>
   <h1>What the 2026 tax roll shows</h1>
-  <p class="lead">Every number in this tool comes from the Orleans Parish 2026 real estate roll published by the Louisiana Tax Commission: one row per tax bill, 115 columns, appraisal date Jan 1, 2023. These pages show how the data was explored, cleaned, matched to addresses, and tested.</p>
+  <p class="lead">Every number in this tool comes from the Orleans Parish 2026 real estate roll (one row per tax bill, 115 columns), compared with the 2027 roll filed Sep 2026. Both come from the Louisiana Tax Commission, and both use values as of Jan 1, 2023. These pages show how the data was explored, cleaned, matched to addresses, and tested.</p>
   <nav class="subnav" id="subnav" aria-label="Behind the data"></nav>
 </div></section>
 
@@ -68,6 +68,15 @@
     <div class="chartbox"><canvas id="c5" aria-label="How far frozen assessments sit below market"></canvas></div>
   </div></div>
 
+
+  <div class="card chartcard" id="yoy"><div class="figrow">
+    <div><h3>6 · 2026 vs. 2027: what changed</h3>
+      <p class="take">I matched every parcel on the 2026 roll to the 2027 roll the Assessor filed with the Tax Commission on Sep 4, 2026, using the parcel number. <b>162,939 of 163,135 matched (99.9%)</b>. <b>98% of homes have exactly the same value.</b> Both rolls use market values as of Jan 1, 2023, because the 2024 reassessment covers tax years 2024–2027. The next one is for the 2028 roll.</p>
+      <p class="take">The 2,430 homes that did change are spread out (chart). They're mostly renovations, new construction, damage, or corrections, not a citywide reset. Homestead turned over too: <b>1,615 homes gained it and 2,156 lost it</b>, usually from a sale or a move.</p>
+      <p class="src">2026 cleaned roll (course Box) vs. 2027 raw LTC files (ORLEANS1–7_2027 TAXROLL, AVALUE.TXT summed by parcel). My parser reproduced the 2026 totals for 100% of District 1 parcels before I trusted it on 2027.</p></div>
+    <div><div class="chartbox" style="height:300px"><canvas id="c6" aria-label="Homes whose value changed from 2026 to 2027, by size of change"></canvas></div>
+      <div class="grid3" style="margin-top:12px" id="yoystats"></div></div>
+  </div></div>
   <div class="grid2" style="margin-bottom:22px">
     <div class="card"><h3>Checking a finding</h3>
       <p class="take" style="color:var(--ink-2);margin-top:8px">I rebuilt the tax bill for 14 real parcels and compared each one to the City's official 2026 bill PDF. <b>10 matched within 3 cents.</b> 3 were lower because of an Act 718 phase-in, and 1 was higher because of the Garden District security millage. Adding up every parcel's estimate gives <b>$632 million</b>, close to the Legislative Auditor's $628.6M projection. <a href="testing.html">See all 14 bills →</a></p></div>
@@ -127,6 +136,12 @@ fetch('data/eda.json').then(r=>r.json()).then(d=>{
       plugins:{legend:{position:'bottom'},tooltip:{mode:'index',intersect:false,callbacks:{label:c=>`${c.dataset.label.split(' (')[0]}: ${c.parsed.y.toFixed(2)}%`,
         afterBody:i=>{const k=i[0].dataIndex;const s=(d.c4.nohs[k]-d.c4.hs[k])/100;return `Homestead saves about ${(s*100).toFixed(2)} points`;}}}}}});
 
+
+  const y=d.c6;
+  document.getElementById('yoystats').innerHTML=[['Homes unchanged',(y.unchanged/y.n_res*100).toFixed(1)+'%'],['Went up',y.up.toLocaleString()],['Went down',y.down.toLocaleString()]].map(([k,v])=>`<div class="stat"><div class="k">${k}</div><div class="v" style="font-size:1.3rem">${v}</div></div>`).join('');
+  new Chart(c6,{type:'bar',data:{labels:y.labels,datasets:[{label:'Homes',data:y.counts,backgroundColor:y.labels.map(l=>l.startsWith('−')||l.startsWith('0 to −')?BRICK:TILE),borderRadius:3}]},
+    options:{scales:{x:{grid:{display:false},ticks:{font:{size:11},maxRotation:40,minRotation:40}},y:{grid:{color:'#EFE7D7'},title:{display:true,text:'Homes (of the 2% that changed)'}}},
+      plugins:{legend:{display:false},tooltip:{callbacks:{title:i=>'Market value change: '+i[0].label,label:c=>c.parsed.y.toLocaleString()+' homes'}}}}});
   new Chart(c5,{type:'bar',data:{labels:d.c5.edges.slice(0,-1).map(e=>e+'%'),datasets:[{label:'Frozen homes',data:d.c5.counts,backgroundColor:TILE,borderRadius:3,barPercentage:.95,categoryPercentage:.95}]},
     options:{scales:{x:{grid:{display:false},title:{display:true,text:'How far below 10% of current value the frozen assessment sits'}},y:{grid:{color:'#EFE7D7'}}},
       plugins:{legend:{display:false},tooltip:{callbacks:{title:i=>`${d.c5.edges[i[0].dataIndex]}–${d.c5.edges[i[0].dataIndex+1]}% below`,label:c=>c.parsed.y.toLocaleString()+' homes'}}}}});

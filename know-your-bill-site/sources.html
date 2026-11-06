@@ -34,7 +34,7 @@
   <div class="arch">
     <div><b>1 · Address → parcel</b><span>The matcher runs in your browser and loads only the slice of the roll for that street's first letter. Your address never leaves the page.</span></div>
     <div><b>2 · Bill estimate</b><span>Computed by page code, not by AI, with the 2026 millage. Checked against 14 real bills.</span></div>
-    <div><b>3 · Question → Claude</b><span>Your question plus the one property on screen go to a small server function that calls Claude with fixed rules and a 18-source knowledge base.</span></div>
+    <div><b>3 · Question → Claude</b><span>Your question plus the one property on screen go to a small server function that calls Claude with fixed rules and a 20-source knowledge base.</span></div>
     <div><b>4 · Answer with sources</b><span>Claude returns an answer, source tags, and a handoff. The page turns tags into links and labels anything unsourced "unverified."</span></div>
   </div>
   <p class="small muted" style="margin-top:12px">Hosted on Vercel from GitHub. The API key lives only on the server. Rate-limited per visitor. Nothing typed is stored. Built with Claude Code; the project's instruction file (CLAUDE.md) is in the GitHub repo.</p>
@@ -66,18 +66,23 @@
     <tr><td>S9</td><td><a href="https://legis.la.gov/LEGIS/ViewDocument.aspx?d=1414405" target="_blank" rel="noopener">Louisiana Legislature: HB 300 (2025), freeze income limit (Amendment 9)</a></td></tr>
     <tr><td>S10</td><td><a href="https://legis.la.gov/legis/ViewDocument.aspx?d=1294799" target="_blank" rel="noopener">Louisiana Legislature: Act 172 (2022) disabled veteran exemptions</a></td></tr>
     <tr><td>S11</td><td><a href="https://bizneworleans.com/2026-orleans-assessments-open-online-appeals-available/" target="_blank" rel="noopener">Biz New Orleans: assessments open; 2023 reassessment background</a></td></tr>
-    <tr><td>S12</td><td><a href="https://veritenews.org/guides/2025-new-orleans-election-guide/assessor-race/" target="_blank" rel="noopener">Verite News: 2025 Assessor race guide (reassessment for the 2027 tax roll)</a></td></tr>
+    <tr><td>S12</td><td><a href="https://veritenews.org/guides/2025-new-orleans-election-guide/assessor-race/" target="_blank" rel="noopener">Verite News: 2025 Assessor race guide</a></td></tr>
     <tr><td>S13</td><td><a href="https://lailluminator.com/?p=12430" target="_blank" rel="noopener">Louisiana Illuminator: 2022 amendment results (Orleans 10% cap failed)</a></td></tr>
     <tr><td>S14</td><td><a href="https://cabl.org/whats-up-with-the-amendments-a-close-look-at-constitutional-amendment-6" target="_blank" rel="noopener">CABL: Amendment 6 explainer (2018 phase-in of 50%+ increases)</a></td></tr>
     <tr><td>S15</td><td><a href="https://www.nolaassessor.com/homestead-sal/" target="_blank" rel="noopener">Orleans Parish Assessor: Homestead &amp; SAL (exemptions, freezes, documents)</a></td></tr>
     <tr><td>S16</td><td><a href="https://taxbills.nola.gov/pdfs/2026/615100903.pdf" target="_blank" rel="noopener">City of New Orleans: 2026 Original Real Estate Tax Bills (14 checked)</a></td></tr>
     <tr><td>S17</td><td><a href="https://ballotpedia.org/Louisiana_Raise_Income_Limit_to_%24150%2C000_for_Special_Property_Tax_Assessment_Amendment_%282026%29" target="_blank" rel="noopener">Ballotpedia: Amendment 9 (2026) results, unofficial as of Nov 4, 2026</a></td></tr>
     <tr><td>S18</td><td><a href="https://www.fox8live.com/2026/11/05/new-orleans-city-council-approves-millage-roll-forward-raising-taxes-slashing-budget-deficit/" target="_blank" rel="noopener">FOX 8, Nov 5, 2026: City Council approves partial millage roll-forward</a></td></tr>
+    <tr><td>S19</td><td><a href="https://nolaassessor.com/wp-content/uploads/sites/80/2023/07/2024-open-rolls-release.pdf" target="_blank" rel="noopener">Orleans Parish Assessor, July 2023: 2024 quadrennial reassessment (values as of Jan 1, 2023 cover tax years 2024–2027)</a></td></tr>
+    <tr><td>S20</td><td><a href="https://stax.latax.la.gov/TaxRollsFolder/2026/" target="_blank" rel="noopener">Louisiana Tax Commission: Orleans 2027 tax roll files (filed Sep 4, 2026), compared with 2026 by this tool</a></td></tr>
+    <tr><td>C1</td><td><a href="https://data.census.gov/" target="_blank" rel="noopener">U.S. Census ACS 2020–2024 block groups</a>, with the parcel crosswalk and sales-ratio study from the course data folder</td></tr>
   </tbody></table></div>
 
   <h2 style="margin:40px 0 14px">Data sources</h2>
   <div class="tscroll src"><table class="t"><thead><tr><th>Data</th><th>Source</th><th>Used for</th></tr></thead><tbody>
     <tr><td>Tax roll</td><td><a href="https://stax.latax.la.gov/" target="_blank" rel="noopener">Orleans Parish 2026 real estate roll, Louisiana Tax Commission</a> (163,135 records, 115 columns)</td><td>Every value, exemption, and bill estimate</td></tr>
+    <tr><td>2027 roll</td><td><a href="https://stax.latax.la.gov/TaxRollsFolder/2026/" target="_blank" rel="noopener">Orleans 2027 tax roll, Louisiana Tax Commission</a> (raw files, 7 districts, filed Sep 4, 2026)</td><td>2026 vs. 2027 on every home card; year-over-year chart</td></tr>
+    <tr><td>Block groups</td><td>Course data folder (Nov 2, 2026): parcel to 2020 block group crosswalk, ACS 2020–2024 profile, sales-ratio study</td><td>Census card on each home; fairness findings</td></tr>
     <tr><td>Tax bills</td><td><a href="https://taxbills.nola.gov/pdfs/2026/615100903.pdf" target="_blank" rel="noopener">City of New Orleans 2026 tax bill PDFs</a></td><td>Checking the bill math (14 bills)</td></tr>
     <tr><td>STR licenses</td><td><a href="https://data.nola.gov/Housing-Land-Use-and-Blight/Active-Short-Term-Rental-Licenses/ufdg-ajws" target="_blank" rel="noopener">City open data, Active Short-Term Rental Licenses</a></td><td>Matcher stress test, landlord context</td></tr>
     <tr><td>Geocoder</td><td><a href="https://geocoding.geo.census.gov/geocoder/" target="_blank" rel="noopener">U.S. Census Geocoder (batch API)</a></td><td>Checking unmatched addresses</td></tr>
@@ -85,7 +90,7 @@
     <tr><td>Auditor</td><td><a href="https://lla.la.gov/publicreports.nsf/0/f74bf8c6ffebdf7f86258a8d00657f6c/$file/000037d0b.pdf" target="_blank" rel="noopener">Legislative Auditor, Orleans 2024 reappraisal</a></td><td>Sanity check on the citywide total</td></tr>
   </tbody></table></div>
 
-  <div class="note warn" style="margin-top:30px"><b>Open items.</b> Amendment 9 is passed on unofficial results until certified. On Nov 5, 2026 the Council approved a partial 4.039-mill roll-forward for 2027 bills; final 2027 rates come with the budget due Dec 1. 2027 values aren't in this data yet. How the Assessor treats homestead on an owner-occupied double isn't in any source the tool uses, so the chatbot says "I don't know."</div>
+  <div class="note warn" style="margin-top:30px"><b>Open items.</b> Amendment 9 is passed on unofficial results until certified. On Nov 5, 2026 the Council approved a partial 4.039-mill roll-forward for 2027 bills; final 2027 rates come with the budget due Dec 1. 2027 values are compared parcel by parcel; 2027 bills are not estimated because rates aren't final. How the Assessor treats homestead on an owner-occupied double isn't in any source the tool uses, so the chatbot says "I don't know."</div>
 </div></main>
 <div id="site-foot"></div>
 <script src="assets/site.js"></script>

@@ -40,6 +40,21 @@
   <p class="small muted" id="shown"></p>
   <div class="tscroll dict"><table class="t"><thead><tr><th>Field</th><th>What it means</th><th>Status</th><th>Filled</th><th class="n">Distinct</th><th>Examples</th></tr></thead><tbody id="rows"></tbody></table></div>
 
+  <div class="card" style="margin-top:28px"><h3>The 2027 roll (raw Tax Commission files)</h3>
+    <p style="margin-top:8px">The 2027 roll came as the Tax Commission's raw files (one zip per district, filed Sep 4, 2026), not a cleaned CSV. I used <code>AVALUE.TXT</code>, which has one line per piece of a parcel (land <code>L</code>, building <code>I</code>, and a third code <code>Y</code>), and summed the lines for each parcel.</p>
+    <div class="tscroll" style="margin:12px 0"><table class="t"><thead><tr><th>Column</th><th>Meaning</th><th>Status</th></tr></thead><tbody>
+      <tr><td>3 (parcel)</td><td>Tax bill / parcel number, same ID as the 2026 roll</td><td><span class="pill ok">Confirmed</span></td></tr>
+      <tr><td>4</td><td>Market value</td><td><span class="pill ok">Confirmed</span></td></tr>
+      <tr><td>5</td><td>Assessed value</td><td><span class="pill ok">Confirmed</span></td></tr>
+      <tr><td>6</td><td>Homestead exemption amount</td><td><span class="pill ok">Confirmed</span></td></tr>
+      <tr><td>7</td><td>Taxable assessed value</td><td><span class="pill ok">Confirmed</span></td></tr>
+      <tr><td>8</td><td>Veteran or first-responder amount (matches 99.6% / 99.9% of rows)</td><td><span class="pill info">Inferred</span></td></tr>
+      <tr><td>9–10</td><td>Value unit (L, I, Y) and LTC subclass code</td><td><span class="pill info">Inferred</span></td></tr>
+      <tr><td>11–18</td><td>Counts, homestead percent, and other codes</td><td><span class="pill warn">Unknown</span></td></tr>
+    </tbody></table></div>
+    <p class="small muted" style="margin:0">Checked first on 2026: summing the raw 2026 District 1 file reproduced the cleaned roll's market, assessed, homestead, and taxable totals for <b>100% of 10,643 parcels</b>. Then 162,939 of 163,135 parcels (99.9%) matched by parcel number across years; 196 were dropped and 505 are new (splits, merges, renumbering). The raw files also have owner names (<code>ASSMT.TXT</code>, <code>OWNER.TXT</code>), which this tool never loads.</p>
+  </div>
+
   <div class="grid2" style="margin-top:28px">
     <div class="card"><h3>What I couldn't figure out</h3>
       <ul class="clean unk" style="margin-top:8px">

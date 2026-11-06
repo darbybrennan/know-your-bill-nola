@@ -25,7 +25,7 @@
   const foot = document.getElementById('site-foot');
   if (foot) foot.outerHTML = `
   <footer class="foot"><div class="wrap">
-    <div><h4>Know Your Bill NOLA</h4><p>A student prototype that helps New Orleans owners understand their property tax bill. Values come from the Orleans Parish 2026 real estate roll (Louisiana Tax Commission, appraisal date Jan 1, 2023). Owner names are never shown. Not affiliated with the City, the Assessor, or any official office.</p></div>
+    <div><h4>Know Your Bill NOLA</h4><p>A student prototype that helps New Orleans owners understand their property tax bill. Values come from the Orleans Parish 2026 and 2027 real estate rolls (Louisiana Tax Commission; both use market values as of Jan 1, 2023). Owner names are never shown. Not affiliated with the City, the Assessor, or any official office.</p></div>
     <div><h4>Use the tool</h4><p><a href="index.html">Check my bill</a><br><a href="index.html#ask">Ask a question</a><br><a href="index.html#people">Talk to a person</a></p></div>
     <div><h4>Behind the data</h4><p><a href="data.html">Explore the data</a><br><a href="dictionary.html">Data dictionary</a><br><a href="matching.html">Address matching</a><br><a href="outside-data.html">Outside data</a><br><a href="testing.html">Testing</a><br><a href="sources.html">Sources &amp; method</a></p></div>
   </div><div class="wrap tiny" style="padding-top:0;padding-bottom:24px;display:block;opacity:.75">Darby Brennan · SRED 4935 AI &amp; Real Estate · Tulane University · Fall 2026</div></footer>`;

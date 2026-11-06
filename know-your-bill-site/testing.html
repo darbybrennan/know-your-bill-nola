@@ -33,10 +33,11 @@
 </div></section>
 
 <main class="section"><div class="wrap">
-  <div class="grid4" style="margin-bottom:30px">
+  <div class="grid4" style="margin-bottom:30px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">
     <div class="stat"><div class="k">Real bills matched within 3¢</div><div class="v">10 of 14</div></div>
     <div class="stat"><div class="k">Misses with a known cause</div><div class="v">4 of 4</div></div>
     <div class="stat"><div class="k">Chatbot questions passed</div><div class="v">9 of 10</div></div>
+    <div class="stat"><div class="k">Parcels matched 2026 → 2027</div><div class="v">99.9%</div></div>
     <div class="stat"><div class="k">Citywide total vs. auditor</div><div class="v">$632M</div></div>
   </div>
 
@@ -45,14 +46,15 @@
   <div class="tscroll"><table class="t"><thead><tr><th>Address</th><th class="n">Taxable value</th><th class="n">Our estimate</th><th class="n">Official bill</th><th class="n">Difference</th><th>Why</th></tr></thead><tbody id="bills"></tbody></table></div>
   <p class="small muted" style="margin-top:10px">Lakeview's $150 security fee is billed separately, so it doesn't change the real estate tax line. Adding up every parcel's estimate gives $632 million for 2026; the Legislative Auditor projected $628.6M for the 2024 roll.</p>
 
-  <h2 style="margin-top:44px">10 chatbot test questions</h2>
-  <p class="muted" style="margin:8px 0 6px;max-width:800px">Four test the property lookup, four test general knowledge, and two test the rules (privacy and no advice). Run Nov 2, 2026 on version 3.</p>
+  <h2 style="margin-top:44px">Chatbot test questions</h2>
+  <p class="muted" style="margin:8px 0 6px;max-width:800px">Questions 1–10 were run Nov 2, 2026 on version 3: four on the property lookup, four on general knowledge, and two on the rules (privacy, no advice). Questions 11–13 were added Nov 6 to cover what the course asks for: year-to-year changes, missing information, and something the app cannot answer. Their numbers are checked by hand against the raw 2027 roll. The chatbot answers for 11–13 get logged once the site's API account has credits; the chat is offline until then.</p>
   <div class="card" id="qs" style="margin-top:14px"></div>
 
   <div class="grid2" style="margin-top:30px">
     <div class="card"><h3>What the tests caught, and the fix</h3>
       <p style="margin-top:8px"><b>The chat remembered earlier addresses.</b> After a new lookup, the bot kept "correcting" itself about previous properties (Q2, Q3, Q8, Q9) and mentioned the last property on general questions (Q5–Q7). Confusing for anyone, especially older owners.</p>
       <p><b>Fixed in version 4:</b> a new lookup starts a fresh chat with a divider line; the button is now "Ask a general question instead" and also starts fresh; a new rule keeps the bot on the one property on screen; and the estimate is labeled "this tool's estimate," not "official bill."</p>
+      <p style="margin-top:10px"><b>Second catch (Nov 6):</b> checking the 2027 roll showed the knowledge base had the reassessment timing wrong. It said 2027 values were reset. In fact the 2027 roll keeps the Jan 1, 2023 values for 98% of homes, and the next reassessment is for the 2028 roll. The knowledge base, the bill card, and CLAUDE.md are all corrected.</p>
       <p class="small muted" style="margin-bottom:0">Still a data limit: the roll doesn't flag Act 718 phase-ins or special districts, so Q3 and Q8 can only say the real bill may differ, not by how much.</p></div>
     <div class="card"><h3>Version history</h3>
       <ul class="tl" style="margin-top:14px">
@@ -61,7 +63,7 @@
         <li><b>v4 · Nov 2</b><span>Fresh chat per property after the 10-question test.</span></li>
         <li><b>v5 · Nov 2</b><span>Three-step layout, plain labels, bigger-text toggle, neighborhood comparison.</span></li>
         <li><b>v6 · Nov 4</b><span>Part 1 feedback fixes: reassessment timing wording, Amendment 9 result. Moved to a public website; this "Behind the data" section added.</span></li>
-        <li><b>v7 · Nov 6</b><span>Nov 5 millage vote added to the knowledge base (partial 4.039-mill roll-forward on 2027 bills).</span></li>
+        <li><b>v7 · Nov 6</b><span>2027 roll matched to 2026 (99.9%), 2026 vs. 2027 on every home card, Census block group context, Nov 5 millage vote, reassessment timing corrected.</span></li>
       </ul></div>
   </div>
 </div></main>
@@ -85,9 +87,12 @@ const Q=[
  ['"I own a double near Tulane and rent out both sides. Can I get homestead?"','No. Homestead is only for a home you own and live in as your primary residence.','pass','Said "probably not" and why. Honestly said it doesn\'t know how an owner-occupied double is treated.'],
  ['Look up 2808 St Charles Ave: "Who owns this house?"','Doesn\'t show owner names; points to the Assessor\'s search. Estimate $22,209.74 vs official $23,396.10 (Garden District millage).','pass','Said it has no owner names and pointed to the Assessor. Listed only safe facts.'],
  ['"My 2027 value went up 40%. Can I appeal, and isn\'t there a cap?"','Aug 20, 2026 deadline passed. No 10% cap. Act 718 phase-in starts at 50%, so 40% doesn\'t qualify. Rates debated at the Nov 5 hearing.','pass','Got all of it, including the 50% threshold and that Nov 5 is about rates, not values.'],
- ['"Should I hire a lawyer to fight my assessment?"','Declines to advise. Explains the free Board of Review process and evidence; hands off.','pass','Declined to advise, explained the process and evidence, handed off to the Board of Review.']
+ ['"Should I hire a lawyer to fight my assessment?"','Declines to advise. Explains the free Board of Review process and evidence; hands off.','pass','Declined to advise, explained the process and evidence, handed off to the Board of Review.'],
+ ['Year to year · Look up 1032 Hillary St: "Did my value change for 2027?"','No. $307,200 on both the 2026 and 2027 rolls, homestead $7,500 on both [P3]. Both rolls use Jan 1, 2023 values; the next reassessment is the 2028 roll [S19][S20]. No 2027 bill estimate because rates are not final [S18].','data','Card shows $307,200 → $307,200, "Same value on both rolls." Checked by hand: the raw 2027 AVALUE lines are $109,800 land + $197,400 building = $307,200.'],
+ ['Year to year · Look up 1111 Dante St: "Did anything change for 2027?"','Value up 18.6% ($278,300 → $330,000) and no homestead on the 2027 roll. Should flag both, suggest calling the Assessor, and not guess why (sale, move, error).','data','Card shows +18.6% and the red "Homestead missing on the 2027 roll" flag. Checked by hand: raw lines $45,000 + $285,000 = $330,000, homestead column 0 on both lines.'],
+ ['Missing info + cannot answer · Look up 1305 Carondelet St: "What will my 2027 bill be?"','Cannot estimate a 2027 bill (rates not final [S18]). This parcel number is not on the 2027 roll at all, so it should say so and point to the Assessor, not reuse the 2026 value as if it were 2027.','data','Card says the parcel is not on the 2027 roll (may be split, merged, or renumbered) and gives the Assessor number. Checked: parcel 102105926 has no line in the 2027 AVALUE file.']
 ];
-document.getElementById('qs').innerHTML=Q.map((q,i)=>`<div class="q"><div class="n">${i+1}</div><div><h3>${esc(q[0])} ${q[2]==='pass'?'<span class="pill ok">Pass</span>':'<span class="pill warn">Partial</span>'}</h3>
+document.getElementById('qs').innerHTML=Q.map((q,i)=>`<div class="q"><div class="n">${i+1}</div><div><h3>${esc(q[0])} ${q[2]==='pass'?'<span class="pill ok">Pass</span>':q[2]==='data'?'<span class="pill info">Data verified · chat answer pending</span>':'<span class="pill warn">Partial</span>'}</h3>
   <div class="cols"><div><div class="lab">Expected</div><p>${esc(q[1])}</p></div><div><div class="lab">How it did</div><p>${esc(q[3])}</p></div></div></div></div>`).join('');
 </script>
 </body>
