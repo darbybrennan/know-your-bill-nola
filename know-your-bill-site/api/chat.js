@@ -1,5 +1,5 @@
 // Vercel serverless function: POST /api/chat
-// Sends the owner's question to Claude with the site's fixed rules and knowledge base.
+// Sends the owner's question to an AI model with the site's fixed rules and knowledge base.
 //
 // Route 1 (default, free): Vercel AI Gateway, authenticated with this deployment's
 //   built-in OIDC token (request header x-vercel-oidc-token). Every Vercel account gets
@@ -126,6 +126,6 @@ module.exports = async (req, res) => {
     const limitedOut = errors.some(e => / 429 /.test(e)) && !errors.some(e => /gemini: .*(503|timeout)/.test(e));
     return res.status(limitedOut ? 429 : 502).json({ error: 'Could not get an answer', code: limitedOut ? 'rate_limited' : 'upstream_error', detail: errors.map(e => e.slice(0, 600)) });
   } catch (e) {
-    return res.status(502).json({ error: 'Could not reach Claude', code: 'upstream_error' });
+    return res.status(502).json({ error: 'Could not reach the AI service', code: 'upstream_error' });
   }
 };

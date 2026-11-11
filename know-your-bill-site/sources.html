@@ -34,8 +34,8 @@
   <div class="arch">
     <div><b>1 · Address → parcel</b><span>The matcher runs in your browser and loads only the slice of the roll for that street's first letter. Your address never leaves the page.</span></div>
     <div><b>2 · Bill estimate</b><span>Computed by page code, not by AI, with the 2026 millage. Checked against 14 real bills.</span></div>
-    <div><b>3 · Question → Claude</b><span>Your question plus the one property on screen go to a small server function that calls Claude with fixed rules and a 20-source knowledge base.</span></div>
-    <div><b>4 · Answer with sources</b><span>Claude returns an answer, source tags, and a handoff. The page turns tags into links and labels anything unsourced "unverified."</span></div>
+    <div><b>3 · Question → AI model</b><span>Your question plus the one property on screen go to a small server function that calls an AI model (Google Gemini, free tier; Claude if credits are added) with fixed rules and a 20-source knowledge base.</span></div>
+    <div><b>4 · Answer with sources</b><span>The model returns an answer, source tags, and a handoff. The page turns tags into links and labels anything unsourced "unverified."</span></div>
   </div>
   <p class="small muted" style="margin-top:12px">Hosted on Vercel from GitHub. The API key lives only on the server. Rate-limited per visitor. Nothing typed is stored. Built with Claude Code; the project's instruction file (CLAUDE.md) is in the GitHub repo.</p>
 
