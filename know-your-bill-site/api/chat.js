@@ -9,7 +9,7 @@
 const { RULES } = require('./_prompt.js');
 
 const GATEWAY_MODELS = (process.env.GATEWAY_MODELS || 'anthropic/claude-sonnet-5.5,anthropic/claude-sonnet-4.5,anthropic/claude-haiku-4.5').split(',');
-const GEMINI_MODELS = (process.env.GEMINI_MODELS || 'gemini-flash-latest,gemini-2.5-flash').split(',');
+const GEMINI_MODELS = (process.env.GEMINI_MODELS || 'gemini-flash-latest,gemini-2.5-flash,gemini-flash-lite-latest,gemini-2.5-flash-lite,gemini-2.0-flash').split(',');
 const ANTHROPIC_MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-5-5';
 const PER_IP_PER_HOUR = Number(process.env.PER_IP_PER_HOUR || 30);
 const hits = new Map(); // simple per-instance rate limit
@@ -50,7 +50,8 @@ async function callGemini(key, system, messages) {
       return { ok: true, text, model: model.trim() };
     }
     last = { ok: false, status: r.status, data };
-    if (![400, 404].includes(r.status)) break;
+    if ([401, 403].includes(r.status)) break; // bad key: no point trying other models
+    // 400/404 (model name), 429 (that model's quota), 500/503 (overloaded): try the next model
   }
   return last;
 }
