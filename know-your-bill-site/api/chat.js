@@ -1,9 +1,14 @@
 // Vercel serverless function: POST /api/chat
 // Sends the owner's question to Claude with the site's fixed rules and knowledge base.
-// The API key lives only in the Vercel environment variable ANTHROPIC_API_KEY.
+//
+// Route 1 (default, free): Vercel AI Gateway, authenticated with this deployment's
+//   built-in OIDC token (request header x-vercel-oidc-token). Every Vercel account gets
+//   $5 of free AI Gateway usage per month, so no API key or card is needed.
+// Route 2 (fallback): Anthropic API directly, if ANTHROPIC_API_KEY is set and has credits.
 const { RULES } = require('./_prompt.js');
 
-const MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-5-5';
+const GATEWAY_MODELS = (process.env.GATEWAY_MODELS || 'anthropic/claude-sonnet-5.5,anthropic/claude-sonnet-4.5,anthropic/claude-haiku-4.5').split(',');
+const ANTHROPIC_MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-5-5';
 const PER_IP_PER_HOUR = Number(process.env.PER_IP_PER_HOUR || 30);
 const hits = new Map(); // simple per-instance rate limit
 
@@ -21,10 +26,14 @@ function parseJson(text) {
   return { answer: text, sources: [], handoff: '', confident: false };
 }
 
+async function callMessages(url, headers, body) {
+  const r = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json', 'anthropic-version': '2023-06-01', ...headers }, body: JSON.stringify(body) });
+  let data = {}; try { data = await r.json(); } catch (e) {}
+  return { ok: r.ok, status: r.status, data };
+}
+
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only', code: 'method' });
-  const key = process.env.ANTHROPIC_API_KEY;
-  if (!key) return res.status(503).json({ error: 'Chat is not configured', code: 'no_key' });
 
   const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || 'unknown';
   if (limited(ip)) return res.status(429).json({ error: 'Too many questions', code: 'rate_limited' });
@@ -41,20 +50,38 @@ module.exports = async (req, res) => {
 
   const property = typeof body.property === 'string' ? body.property.slice(0, 3000) : '';
   const system = RULES + (property ? '\n\nPROPERTY RECORD (the owner looked this up):\n' + property : '');
+  const base = { max_tokens: 900, system, messages };
+  const errors = [];
 
   try {
-    const r = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: MODEL, max_tokens: 900, system, messages })
-    });
-    const data = await r.json();
-    if (!r.ok) {
-      const code = r.status === 429 ? 'rate_limited' : 'upstream_error';
-      return res.status(r.status === 429 ? 429 : 502).json({ error: (data.error && data.error.message) || 'Upstream error', code });
+    // Route 1: Vercel AI Gateway (free monthly credits, OIDC auth)
+    const token = req.headers['x-vercel-oidc-token'] || process.env.VERCEL_OIDC_TOKEN || process.env.AI_GATEWAY_API_KEY;
+    if (token) {
+      for (const model of GATEWAY_MODELS) {
+        const r = await callMessages('https://ai-gateway.vercel.sh/v1/messages', { authorization: 'Bearer ' + token }, { model: model.trim(), ...base });
+        if (r.ok) {
+          const text = (r.data.content || []).filter(c => c.type === 'text').map(c => c.text).join('');
+          return res.status(200).json({ ...parseJson(text), via: 'gateway:' + model.trim() });
+        }
+        errors.push('gateway ' + model + ' ' + r.status + ' ' + ((r.data.error && r.data.error.message) || ''));
+        if (r.status === 429) break;               // out of free credits or rate limited
+        if (![400, 404].includes(r.status)) break;  // only try the next model on a model error
+      }
     }
-    const text = (data.content || []).filter(c => c.type === 'text').map(c => c.text).join('');
-    return res.status(200).json(parseJson(text));
+    // Route 2: Anthropic API directly
+    const key = process.env.ANTHROPIC_API_KEY;
+    if (key) {
+      const r = await callMessages('https://api.anthropic.com/v1/messages', { 'x-api-key': key }, { model: ANTHROPIC_MODEL, ...base });
+      if (r.ok) {
+        const text = (r.data.content || []).filter(c => c.type === 'text').map(c => c.text).join('');
+        return res.status(200).json({ ...parseJson(text), via: 'anthropic' });
+      }
+      errors.push('anthropic ' + r.status + ' ' + ((r.data.error && r.data.error.message) || ''));
+    }
+    if (!token && !key) return res.status(503).json({ error: 'Chat is not configured', code: 'no_key' });
+    console.error('chat failed:', errors.join(' | '));
+    const limitedOut = errors.some(e => / 429 /.test(e));
+    return res.status(limitedOut ? 429 : 502).json({ error: 'Could not get an answer', code: limitedOut ? 'rate_limited' : 'upstream_error', detail: errors.map(e => e.slice(0, 160)) });
   } catch (e) {
     return res.status(502).json({ error: 'Could not reach Claude', code: 'upstream_error' });
   }
