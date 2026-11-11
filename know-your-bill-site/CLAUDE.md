@@ -4,7 +4,7 @@
 >
 > **Project:** Final project, AI & Real Estate (SRED 4935), Tulane, Fall 2026 · **Owner:** Darby Brennan
 > **Course name for the project:** NOLA Assessment Navigator · **Product name:** Know Your Bill NOLA
-> **Last updated:** Nov 6, 2026 (2027 roll comparison, Census block groups, reassessment timing corrected, Nov 5 millage vote)
+> **Last updated:** Nov 11, 2026 (Final Draft: free chat routes, Layers 1–2 live, Layer 3 status, leftover 2027 wording fixed)
 
 ---
 
@@ -13,12 +13,12 @@
 - **Product:** a plain-English chatbot for New Orleans property owners.
 - **Live website (public, no sign-in):** https://know-your-bill-nola-know-your-bill.vercel.app/
   - Repo: github.com/darbybrennan/know-your-bill-nola (site files in `know-your-bill-site/`; Vercel Root Directory = that folder).
-  - Chat runs through `api/chat.js` (Vercel function) with the key in the `ANTHROPIC_API_KEY` env var. Rules + KB live server-side in `api/_prompt.js`.
+  - Chat runs through `api/chat.js` (Vercel function). It tries free routes first: Vercel AI Gateway, then Google Gemini (`GEMINI_API_KEY`), then Anthropic (`ANTHROPIC_API_KEY`). Rules + KB live server-side in `api/_prompt.js`. See §5.
 - **Old artifact version (kept for history):** https://claude.ai/artifact/Y1STBAZpBpHdWU68LE76cU
 - **Part 2 report:** "Know Your Bill NOLA — Part 2" doc, https://claude.ai/artifact/MPN557EobZ4EGGcejoG7rR
 - **Site pages:**
   - `index.html`: the tool (address lookup → big bill number + value→taxable→bill strip → "Things to check" → neighborhood compare → chat → contacts).
-  - "Behind the data" section: `data.html` (5 interactive EDA charts + neighborhood explorer + Excel checks), `dictionary.html` (searchable 115-field dictionary), `matching.html` (method, live matcher demo, 16-address + 4,299-STR tests, Census Geocoder check), `outside-data.html` (STR API + map, Census), `testing.html` (14 real bills, 10 test questions, version history), `sources.html` (architecture, rules, S1–S18, data sources).
+  - "Behind the data" section: `data.html` (6 interactive EDA charts + neighborhood explorer + Excel checks), `dictionary.html` (searchable 115-field dictionary), `matching.html` (method, live matcher demo, 16-address + 4,299-STR tests, Census Geocoder check), `outside-data.html` (STR API + map, Census block groups, sales-ratio study), `testing.html` (14 real bills, 13 test questions, version history), `sources.html` (architecture, rules, S1–S20, C1, data sources).
   - Shared `assets/site.css` (design tokens) and `assets/site.js` (header, footer, bigger-text toggle, `KYB.nice()` address title-casing).
   - Data: `data/b_*.json` (roll buckets; 2026 fields 0–22, 2027 fields 23–26, block group 27), `data/nbhd.json`, `data/bg.json` (Census block groups), `data/eda.json` (chart data incl. 2026→2027 and sales ratio, STR points), `data/project.json` (dictionary, match tests, bill check, geocoder sample).
 - **Privacy rule for public pages:** owner names, contact names, and mailing addresses never appear, including in data dictionary examples (redacted in `project.json`).
@@ -72,9 +72,9 @@ It walks them through three decisions, in this order:
 
 | Layer | What the user gets | Status |
 |---|---|---|
-| **1. General guidance** | How assessments, exemptions, bills, and appeals work in Orleans Parish, with sources | **Live** (this file + artifact) |
-| **2. My property** | Type any NOLA address → assessed value, exemptions on file, and an estimated bill | **Live** (Part 2) |
-| **3. Market context** | Nearby sales and neighborhood trends, so the owner can judge whether the value looks fair | Final draft (Nov 15) |
+| **1. General guidance** | How assessments, exemptions, bills, and appeals work in Orleans Parish, with sources | **Live** (website chat) |
+| **2. My property** | Type any NOLA address → assessed value, exemptions on file, and an estimated bill | **Live** (website lookup + chat) |
+| **3. Market context** | Nearby sales and neighborhood trends, so the owner can judge whether the value looks fair | **Partly live:** neighborhood compare, Census block group card, 2026 vs 2027 values, sales-ratio study. Nearby sales list planned for the Final (Dec 1). |
 
 ---
 
@@ -272,7 +272,7 @@ Build these into the prompt and the UI. They are non-negotiable.
    - Cite the roll record as [P1] and the page's bill estimate as [P2].
    - Use the page's numbers exactly; never recompute them.
    - Always say the estimate leaves out neighborhood fees, special-district millage, and any Act 718 phase-in, and link to the official bill.
-   - Say these are 2026 values (appraisal date Jan 1, 2023), not the 2027 values.
+   - Say the bill estimate uses 2026 values and 2026 rates (appraisal date Jan 1, 2023). Show 2027 roll values as [P3] when they exist, but never estimate a 2027 bill.
 
 ---
 
@@ -314,7 +314,7 @@ Each topic lists its sources and the questions owners most likely ask. These dou
 | Homestead savings | $7,500 × 121.97 ÷ 1,000 | **≈ $914.78/yr** |
 
   - Excludes special-district millages and flat security-district fees.
-  - 2027 bills will differ because of the reassessment for the 2027 roll, rollbacks, and the possible roll-forward [S5].
+  - 2027 bills will differ mainly because of new 2027 rates: the Nov 5, 2026 partial roll-forward of 4.039 mills [S18]. Values stay the same for 98% of parcels [S20].
 - **Owners ask:**
   1. "How much will I owe this year?"
   2. "Why is my bill different from my neighbor's?"
@@ -369,15 +369,20 @@ Each topic lists its sources and the questions owners most likely ask. These dou
 - **Link (submit this one):** https://know-your-bill-nola-know-your-bill.vercel.app/ — public website, no sign-in needed.
 - **Old artifact version:** https://claude.ai/artifact/Y1STBAZpBpHdWU68LE76cU (private; kept for history).
 - **How it works:**
-  - The server prompt (`api/_prompt.js`) combines the §3 rules with a KB of 18 numbered sources (S1–S18), plus the looked-up property record (P1/P2) when there is one.
+  - The server prompt (`api/_prompt.js`) combines the §3 rules with a KB of numbered sources (S1–S20, C1), plus the looked-up property record (P1 2026 roll, P2 page estimate, P3 2027 roll, C1 block group) when there is one.
   - The address lookup and bill estimate run in page code (see §10), not in the model.
-  - Claude returns JSON: `{answer, sources[], handoff, confident}`.
-  - The page renders:
-    - numbered citation links;
-    - a source list;
-    - a "Talk to a person" handoff;
-    - an "unverified" label when no source matched.
-- **Cost:** chat calls run on Darby's Anthropic API key (Vercel env var), so the account needs prepaid credits. Rate limit: 30 questions per visitor per hour.
+  - The model returns JSON: `{answer, sources[], handoff, confident}`. The API adds `via` (which route answered).
+  - The page renders numbered citation links, a source list, a "Talk to a person" handoff, and an "unverified" label when no source matched.
+- **Model routes (`api/chat.js`, tried in order, $0 budget):**
+
+| # | Route | Auth / env var | Notes |
+|---|---|---|---|
+| 1 | Vercel AI Gateway (Claude models) | Deployment's OIDC token (automatic) | $5/month free, but Vercel requires a card on file; returns 403 without one, so it falls through. |
+| 2 | Google Gemini free tier | `GEMINI_API_KEY` (free key from aistudio.google.com) | Main working route. Models: `GEMINI_MODELS` (default `gemini-flash-latest,gemini-2.5-flash`). |
+| 3 | Anthropic API | `ANTHROPIC_API_KEY` | Only if the account has prepaid credits. |
+
+- **Guardrails in code:** 30 questions per visitor per hour; only the last 6 messages, 1,500 characters each; property context capped at 3,000 characters; no chat logs stored.
+- **If the chat breaks:** POST to `/api/chat` and read `detail` in the error; it lists each route's status.
 
 ---
 
@@ -436,6 +441,7 @@ The five starter questions were run in the live page; screenshots are attached s
   - 2027 values (need the 2027 roll when the LTC posts it).
 
 ### Final draft (Nov 15): Layer 3, market context
+- **Status Nov 11:** neighborhood compare, Census block group card, 2026 vs 2027 card, and the sales-ratio study are live. The nearby-sales list below moves to the Final.
 - Show recent nearby sales vs. the assessed value as the evidence an owner would bring to an appeal.
 - Present it as information, never as a recommendation.
 - **Sales data:** the roll's Transfer Date and Purchase Price, keeping only SALE/SALW instruments with prices over $1,000. The Verified Sale flag is useless ("N" in every row).
@@ -465,7 +471,7 @@ The five starter questions were run in the live page; screenshots are attached s
 | S9 | Louisiana Legislature — HB 300 (2025), freeze income limit (Amendment 9, Nov 3, 2026 ballot) | https://legis.la.gov/LEGIS/ViewDocument.aspx?d=1414405 |
 | S10 | Louisiana Legislature — Act 172 (2022) disabled veteran exemptions | https://legis.la.gov/legis/ViewDocument.aspx?d=1294799 |
 | S11 | Biz New Orleans — assessments open; 2023 reassessment background | https://bizneworleans.com/2026-orleans-assessments-open-online-appeals-available/ |
-| S12 | Verite News — 2025 Assessor race guide (reassessment for the 2027 tax roll) | https://veritenews.org/guides/2025-new-orleans-election-guide/assessor-race/ |
+| S12 | Verite News — 2025 Assessor race guide (next reassessment cycle) | https://veritenews.org/guides/2025-new-orleans-election-guide/assessor-race/ |
 | S13 | Louisiana Illuminator — 2022 amendment results (Orleans cap failed) | https://lailluminator.com/?p=12430 |
 | S14 | CABL — Amendment 6 explainer (2018 phase-in) | https://cabl.org/whats-up-with-the-amendments-a-close-look-at-constitutional-amendment-6 |
 | S15 | Orleans Parish Assessor — Homestead & SAL page (read Oct 28, 2026 in a browser; the site blocks bots). A text copy is saved as `assessor_homestead_sal_2026-10-28.txt`. | https://www.nolaassessor.com/homestead-sal/ |
@@ -653,3 +659,8 @@ estimate = main + policeFire
   - Added 2026-vs-2027 to every home card and the chat context [P3], plus chart 6.
   - Added Census block group context from the course crosswalk [C1] and the sales-ratio findings to the Outside data page.
   - Added test questions 11–13 (year-to-year, missing record, cannot answer). Data verified; chatbot answers pending API credits.
+- **Nov 11, 2026** — Final Draft (v8):
+  - Chat moved to free routes (Vercel AI Gateway → Gemini free tier → Anthropic), since the Anthropic account has no credits. §5 rewritten.
+  - Fixed leftover wording that called 2027 a reassessment roll (Topic B, rule 10, S12 label).
+  - Layers 1–2 marked live; Layer 3 marked partly live.
+  - Ran test questions 11–13 and the demo trio (general question, property lookup, refusal/handoff) on the live site; results on `testing.html`.
