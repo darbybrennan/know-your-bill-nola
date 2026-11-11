@@ -234,7 +234,7 @@ function fmt(text, order){
   const lines = esc(text).split(/\n+/); let html='', inList=false;
   for (let line of lines){
     line = line.replace(/\*\*(.+?)\*\*/g,'<b>$1</b>')
-      .replace(/\[((?:S|P)\d+)\]/g,(m,id)=>{ if(!SOURCES[id]) return ''; if(!order.includes(id)) order.push(id); return `<a class="cite" href="${SOURCES[id].u}" target="_blank" rel="noopener">[${order.indexOf(id)+1}]</a>`; });
+      .replace(/\[((?:S|P|C)\d+(?:\s*[,;]\s*\[?(?:S|P|C)\d+\]?)*)\]/g,(m,ids)=>ids.split(/[,;\s\[\]]+/).filter(Boolean).map(id=>{ if(!SOURCES[id]) return ''; if(!order.includes(id)) order.push(id); return `<a class="cite" href="${SOURCES[id].u}" target="_blank" rel="noopener">[${order.indexOf(id)+1}]</a>`; }).join(''));
     if (/^\s*[-•]\s+/.test(line)){ if(!inList){html+='<ul>';inList=true;} html+='<li>'+line.replace(/^\s*[-•]\s+/,'')+'</li>'; }
     else { if(inList){html+='</ul>';inList=false;} if(line.trim()) html+='<p>'+line+'</p>'; }
   }

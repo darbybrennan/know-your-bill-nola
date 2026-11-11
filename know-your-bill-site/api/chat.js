@@ -9,7 +9,7 @@
 const { RULES } = require('./_prompt.js');
 
 const GATEWAY_MODELS = (process.env.GATEWAY_MODELS || 'anthropic/claude-sonnet-5.5,anthropic/claude-sonnet-4.5,anthropic/claude-haiku-4.5').split(',');
-const GEMINI_MODELS = (process.env.GEMINI_MODELS || 'gemini-flash-latest,gemini-2.5-flash,gemini-flash-lite-latest,gemini-2.5-flash-lite,gemini-2.0-flash').split(',');
+const GEMINI_MODELS = (process.env.GEMINI_MODELS || 'gemini-flash-latest,gemini-2.5-flash,gemini-flash-lite-latest,gemini-2.5-flash-lite').split(',');
 const ANTHROPIC_MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-5-5';
 const PER_IP_PER_HOUR = Number(process.env.PER_IP_PER_HOUR || 30);
 const hits = new Map(); // simple per-instance rate limit

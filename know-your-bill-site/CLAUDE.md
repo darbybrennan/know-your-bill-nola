@@ -378,7 +378,7 @@ Each topic lists its sources and the questions owners most likely ask. These dou
 | # | Route | Auth / env var | Notes |
 |---|---|---|---|
 | 1 | Vercel AI Gateway (Claude models) | Deployment's OIDC token (automatic) | $5/month free, but Vercel requires a card on file; returns 403 without one, so it falls through. |
-| 2 | Google Gemini free tier | `GEMINI_API_KEY` (free key from aistudio.google.com) | Main working route. Models: `GEMINI_MODELS` (default `gemini-flash-latest,gemini-2.5-flash`). |
+| 2 | Google Gemini free tier | `GEMINI_API_KEY` (free key from aistudio.google.com) | Main working route. Models: `GEMINI_MODELS` (default `gemini-flash-latest,gemini-2.5-flash,gemini-flash-lite-latest,gemini-2.5-flash-lite`; falls back to the next model when one is overloaded). |
 | 3 | Anthropic API | `ANTHROPIC_API_KEY` | Only if the account has prepaid credits. |
 
 - **Guardrails in code:** 30 questions per visitor per hour; only the last 6 messages, 1,500 characters each; property context capped at 3,000 characters; no chat logs stored.
