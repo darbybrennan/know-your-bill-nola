@@ -4,10 +4,12 @@
 // Route 1 (default, free): Vercel AI Gateway, authenticated with this deployment's
 //   built-in OIDC token (request header x-vercel-oidc-token). Every Vercel account gets
 //   $5 of free AI Gateway usage per month, so no API key or card is needed.
-// Route 2 (fallback): Anthropic API directly, if ANTHROPIC_API_KEY is set and has credits.
+// Route 2: Google Gemini free tier, if GEMINI_API_KEY is set (free key from aistudio.google.com, no card).
+// Route 3: Anthropic API directly, if ANTHROPIC_API_KEY is set and has credits.
 const { RULES } = require('./_prompt.js');
 
 const GATEWAY_MODELS = (process.env.GATEWAY_MODELS || 'anthropic/claude-sonnet-5.5,anthropic/claude-sonnet-4.5,anthropic/claude-haiku-4.5').split(',');
+const GEMINI_MODELS = (process.env.GEMINI_MODELS || 'gemini-flash-latest,gemini-2.5-flash').split(',');
 const ANTHROPIC_MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-5-5';
 const PER_IP_PER_HOUR = Number(process.env.PER_IP_PER_HOUR || 30);
 const hits = new Map(); // simple per-instance rate limit
@@ -30,6 +32,27 @@ async function callMessages(url, headers, body) {
   const r = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json', 'anthropic-version': '2023-06-01', ...headers }, body: JSON.stringify(body) });
   let data = {}; try { data = await r.json(); } catch (e) {}
   return { ok: r.ok, status: r.status, data };
+}
+
+
+async function callGemini(key, system, messages) {
+  const contents = messages.map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }));
+  let last = { ok: false, status: 0, data: {} };
+  for (const model of GEMINI_MODELS) {
+    const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + model.trim() + ':generateContent', {
+      method: 'POST', headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
+      body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents,
+        generationConfig: { maxOutputTokens: 1200, temperature: 0.3, responseMimeType: 'application/json' } })
+    });
+    let data = {}; try { data = await r.json(); } catch (e) {}
+    if (r.ok) {
+      const text = ((data.candidates || [])[0]?.content?.parts || []).map(p => p.text || '').join('');
+      return { ok: true, text, model: model.trim() };
+    }
+    last = { ok: false, status: r.status, data };
+    if (![400, 404].includes(r.status)) break;
+  }
+  return last;
 }
 
 module.exports = async (req, res) => {
@@ -68,7 +91,14 @@ module.exports = async (req, res) => {
         if (![400, 404].includes(r.status)) break;  // only try the next model on a model error
       }
     }
-    // Route 2: Anthropic API directly
+    // Route 2: Gemini free tier
+    const gkey = process.env.GEMINI_API_KEY;
+    if (gkey) {
+      const g = await callGemini(gkey, system, messages);
+      if (g.ok) return res.status(200).json({ ...parseJson(g.text), via: 'gemini:' + g.model });
+      errors.push('gemini ' + g.status + ' ' + ((g.data.error && g.data.error.message) || ''));
+    }
+    // Route 3: Anthropic API directly
     const key = process.env.ANTHROPIC_API_KEY;
     if (key) {
       const r = await callMessages('https://api.anthropic.com/v1/messages', { 'x-api-key': key }, { model: ANTHROPIC_MODEL, ...base });
@@ -78,7 +108,7 @@ module.exports = async (req, res) => {
       }
       errors.push('anthropic ' + r.status + ' ' + ((r.data.error && r.data.error.message) || ''));
     }
-    if (!token && !key) return res.status(503).json({ error: 'Chat is not configured', code: 'no_key' });
+    if (!token && !key && !gkey) return res.status(503).json({ error: 'Chat is not configured', code: 'no_key' });
     console.error('chat failed:', errors.join(' | '));
     const limitedOut = errors.some(e => / 429 /.test(e));
     return res.status(limitedOut ? 429 : 502).json({ error: 'Could not get an answer', code: limitedOut ? 'rate_limited' : 'upstream_error', detail: errors.map(e => e.slice(0, 160)) });
