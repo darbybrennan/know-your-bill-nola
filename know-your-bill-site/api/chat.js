@@ -35,10 +35,12 @@ async function callMessages(url, headers, body) {
 }
 
 
-async function callGemini(key, system, messages, deadline) {
+const noThink = new Set();
+async function callGemini(key, system, messages, deadline, startAt) {
   const contents = messages.map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }));
   const errs = [];
-  for (const model of GEMINI_MODELS.map(x => x.trim()).filter(Boolean)) {
+  const list = GEMINI_MODELS.map(x => x.trim()).filter(Boolean);
+  for (const model of startAt ? list.slice(list.indexOf(startAt)) : list) {
     const left = deadline - Date.now();
     if (left < 4000) { errs.push(model + ' skipped (out of time)'); break; }
     const ctrl = new AbortController();
@@ -47,9 +49,12 @@ async function callGemini(key, system, messages, deadline) {
       const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent', {
         method: 'POST', signal: ctrl.signal, headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
         body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents,
-          generationConfig: { maxOutputTokens: 1200, temperature: 0.3, responseMimeType: 'application/json' } })
+          generationConfig: { maxOutputTokens: 1500, temperature: 0.3, responseMimeType: 'application/json',
+            ...(noThink.has(model) ? {} : { thinkingConfig: { thinkingLevel: 'low' } }) } })
       });
       let data = {}; try { data = await r.json(); } catch (e) {}
+      // Older models don't take thinkingLevel: retry the same model once without it
+      if (r.status === 400 && !noThink.has(model) && /think/i.test(JSON.stringify(data))) { noThink.add(model); clearTimeout(timer); return callGemini(key, system, messages, deadline, model); }
       const text = ((data.candidates || [])[0]?.content?.parts || []).map(p => p.text || '').join('');
       if (r.ok && text) return { ok: true, text, model };
       errs.push(model + ' ' + r.status + ' ' + String((data.error && data.error.message) || (r.ok ? 'empty answer' : '')).slice(0, 90));
