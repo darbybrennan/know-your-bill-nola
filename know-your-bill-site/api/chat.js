@@ -9,7 +9,7 @@
 const { RULES } = require('./_prompt.js');
 
 const GATEWAY_MODELS = (process.env.GATEWAY_MODELS || 'anthropic/claude-sonnet-5.5,anthropic/claude-sonnet-4.5,anthropic/claude-haiku-4.5').split(',');
-const GEMINI_MODELS = (process.env.GEMINI_MODELS || 'gemini-flash-latest,gemini-2.5-flash,gemini-flash-lite-latest,gemini-2.5-flash-lite').split(',');
+const GEMINI_MODELS = (process.env.GEMINI_MODELS || 'gemini-flash-latest,gemini-3.8-flash,gemini-3.5-flash,gemini-flash-lite-latest,gemini-3.5-flash-lite').split(',');
 const ANTHROPIC_MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-5-5';
 const PER_IP_PER_HOUR = Number(process.env.PER_IP_PER_HOUR || 30);
 const hits = new Map(); // simple per-instance rate limit
@@ -35,25 +35,31 @@ async function callMessages(url, headers, body) {
 }
 
 
-async function callGemini(key, system, messages) {
+async function callGemini(key, system, messages, deadline) {
   const contents = messages.map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }));
-  let last = { ok: false, status: 0, data: {} };
-  for (const model of GEMINI_MODELS) {
-    const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + model.trim() + ':generateContent', {
-      method: 'POST', headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
-      body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents,
-        generationConfig: { maxOutputTokens: 1200, temperature: 0.3, responseMimeType: 'application/json' } })
-    });
-    let data = {}; try { data = await r.json(); } catch (e) {}
-    if (r.ok) {
+  const errs = [];
+  for (const model of GEMINI_MODELS.map(x => x.trim()).filter(Boolean)) {
+    const left = deadline - Date.now();
+    if (left < 4000) { errs.push(model + ' skipped (out of time)'); break; }
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), Math.min(20000, left));
+    try {
+      const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent', {
+        method: 'POST', signal: ctrl.signal, headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
+        body: JSON.stringify({ systemInstruction: { parts: [{ text: system }] }, contents,
+          generationConfig: { maxOutputTokens: 1200, temperature: 0.3, responseMimeType: 'application/json' } })
+      });
+      let data = {}; try { data = await r.json(); } catch (e) {}
       const text = ((data.candidates || [])[0]?.content?.parts || []).map(p => p.text || '').join('');
-      return { ok: true, text, model: model.trim() };
-    }
-    last = { ok: false, status: r.status, data };
-    if ([401, 403].includes(r.status)) break; // bad key: no point trying other models
-    // 400/404 (model name), 429 (that model's quota), 500/503 (overloaded): try the next model
+      if (r.ok && text) return { ok: true, text, model };
+      errs.push(model + ' ' + r.status + ' ' + String((data.error && data.error.message) || (r.ok ? 'empty answer' : '')).slice(0, 90));
+      if ([401, 403].includes(r.status)) break; // bad key: no point trying other models
+      // 400/404 (retired model), 429 (that model's quota), 500/503 (overloaded): try the next model
+    } catch (e) {
+      errs.push(model + ' timeout');
+    } finally { clearTimeout(timer); }
   }
-  return last;
+  return { ok: false, status: 0, errs };
 }
 
 module.exports = async (req, res) => {
@@ -76,6 +82,7 @@ module.exports = async (req, res) => {
   const system = RULES + (property ? '\n\nPROPERTY RECORD (the owner looked this up):\n' + property : '');
   const base = { max_tokens: 900, system, messages };
   const errors = [];
+  const started = Date.now();
 
   try {
     // Route 1: Vercel AI Gateway (free monthly credits, OIDC auth)
@@ -95,9 +102,9 @@ module.exports = async (req, res) => {
     // Route 2: Gemini free tier
     const gkey = process.env.GEMINI_API_KEY;
     if (gkey) {
-      const g = await callGemini(gkey, system, messages);
+      const g = await callGemini(gkey, system, messages, started + 55000);
       if (g.ok) return res.status(200).json({ ...parseJson(g.text), via: 'gemini:' + g.model });
-      errors.push('gemini ' + g.status + ' ' + ((g.data.error && g.data.error.message) || ''));
+      errors.push('gemini: ' + g.errs.join(' | '));
     }
     // Route 3: Anthropic API directly
     const key = process.env.ANTHROPIC_API_KEY;
@@ -111,8 +118,8 @@ module.exports = async (req, res) => {
     }
     if (!token && !key && !gkey) return res.status(503).json({ error: 'Chat is not configured', code: 'no_key' });
     console.error('chat failed:', errors.join(' | '));
-    const limitedOut = errors.some(e => / 429 /.test(e));
-    return res.status(limitedOut ? 429 : 502).json({ error: 'Could not get an answer', code: limitedOut ? 'rate_limited' : 'upstream_error', detail: errors.map(e => e.slice(0, 160)) });
+    const limitedOut = errors.some(e => / 429 /.test(e)) && !errors.some(e => /gemini: .*(503|timeout)/.test(e));
+    return res.status(limitedOut ? 429 : 502).json({ error: 'Could not get an answer', code: limitedOut ? 'rate_limited' : 'upstream_error', detail: errors.map(e => e.slice(0, 600)) });
   } catch (e) {
     return res.status(502).json({ error: 'Could not reach Claude', code: 'upstream_error' });
   }

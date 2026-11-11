@@ -252,8 +252,14 @@ async function askQuestion(q){
   const pending=add('bot','<p class="thinking">Looking through the sources…</p>');
   send.disabled=true; turns.push({role:'user',content:q});
   try{
-    const resp=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:turns.slice(-6),property:current?propertyContext(current):''})});
-    const r=await resp.json().catch(()=>({}));
+    const payload=JSON.stringify({messages:turns.slice(-6),property:current?propertyContext(current):''});
+    let resp, r;
+    for (let attempt=0; attempt<2; attempt++){ // the free AI tier is sometimes busy, so retry once before showing an error
+      resp=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:payload});
+      r=await resp.json().catch(()=>({}));
+      if (resp.ok || ![502,503,504].includes(resp.status)) break;
+      pending.innerHTML='<p class="thinking">Still looking. The free AI service is busy, trying again…</p>';
+    }
     if(!resp.ok){ const err=new Error(r.error||'error'); err.code=r.code||('http_'+resp.status); throw err; }
     const order=[]; let html=fmt(String(r.answer||"I don't know."),order);
     (Array.isArray(r.sources)?r.sources:[]).forEach(id=>{ if(SOURCES[id]&&!order.includes(id)) order.push(id); });
