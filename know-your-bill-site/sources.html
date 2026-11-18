@@ -18,6 +18,7 @@
 .rules li{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px 12px 52px;position:relative;font-size:.95rem}
 .rules li::before{counter-increment:r;content:counter(r);position:absolute;left:12px;top:12px;width:28px;height:28px;border-radius:7px;background:var(--tile-soft);color:var(--tile);display:grid;place-items:center;font-weight:700}
 .src td:first-child{font-weight:700;white-space:nowrap;color:var(--tile)}
+.card ul.clean li{margin-bottom:9px}
 </style>
 </head>
 <body data-page="sources">
@@ -38,6 +39,45 @@
     <div><b>4 · Answer with sources</b><span>The model returns an answer, source tags, and a handoff. The page turns tags into links and labels anything unsourced "unverified."</span></div>
   </div>
   <p class="small muted" style="margin-top:12px">Hosted on Vercel from GitHub. The API key lives only on the server. Rate-limited per visitor. Nothing typed is stored. Built with Claude Code; the project's instruction file (CLAUDE.md) is in the GitHub repo.</p>
+
+  <h2 style="margin:40px 0 6px">How the AI model works</h2>
+  <p class="lead" style="margin:0 0 16px;font-size:1rem">The AI only writes the words. It doesn't look anything up, do the math, or remember you. Here's exactly what happens when you hit "Ask."</p>
+  <div class="tscroll"><table class="t"><thead><tr><th style="width:26%">Step</th><th>What happens</th></tr></thead><tbody>
+    <tr><td><b>1 · The page builds a message</b></td><td>Your question, plus your last few messages (up to 6, 1,500 characters each). If you looked up a home, the page also adds that one property's record, written out as plain text.</td></tr>
+    <tr><td><b>2 · The server adds the rules</b></td><td>A small server function (<code>api/chat.js</code>) puts the 10 rules and the knowledge base (S1–S20, about 2,500 words of facts, each tagged with its source) in front of your question. Visitors never see or change this part.</td></tr>
+    <tr><td><b>3 · The model writes an answer</b></td><td>Google Gemini (free tier) reads all of that and writes a reply in a fixed format: <code>answer</code>, <code>sources</code>, <code>handoff</code>, and <code>confident</code>.</td></tr>
+    <tr><td><b>4 · The page checks it</b></td><td>The page turns each tag like [S1] into a numbered link, lists the sources under the answer, adds the "Talk to a person" box, and labels the answer "unverified" if no source matched.</td></tr>
+  </tbody></table></div>
+
+  <div class="grid2" style="margin-top:20px">
+    <div class="card"><h3>What the model sees about a home</h3>
+      <ul class="clean" style="margin-top:8px">
+        <li><b>[P1] 2026 roll:</b> address, parcel number, district, property type, market and assessed values, exemptions on file, freeze status, and the last recorded sale.</li>
+        <li><b>[P2] This tool's estimate:</b> the bill math, already done by page code, with every number filled in.</li>
+        <li><b>[P3] 2027 roll:</b> the 2027 values and the change from 2026, if the parcel is on that roll.</li>
+        <li><b>[C1] Census block group:</b> neighborhood income, ownership rate, and typical values, labeled "neighborhood, not this home."</li>
+        <li><b>Never:</b> owner names. They aren't in the site's data files at all.</li>
+      </ul></div>
+    <div class="card"><h3>What the model can't do</h3>
+      <ul class="clean" style="margin-top:8px">
+        <li><b>Browse the web.</b> It only knows the 20 sources plus the one record on screen. If they don't cover it, it's told to say "I don't know."</li>
+        <li><b>Do the bill math.</b> Version 1 got 2 of 6 estimates wrong, so the math moved into page code. The model is told to copy the page's numbers exactly.</li>
+        <li><b>Remember you.</b> Nothing is saved. A new address lookup starts a fresh chat, so two homes never mix.</li>
+        <li><b>Give advice.</b> For "should I…?" questions it explains the options and hands you to the right office.</li>
+      </ul></div>
+  </div>
+
+  <div class="card" style="margin-top:20px"><h3>Model settings and backups</h3>
+    <div class="tscroll" style="margin-top:10px"><table class="t"><tbody>
+      <tr><td style="width:30%"><b>Model</b></td><td>Google Gemini through the free API tier. The server tries <code>gemini-flash-latest</code> first, then newer Flash and Flash-Lite models if one is busy. It can switch to Claude if an Anthropic key with credits is added; no code change is needed.</td></tr>
+      <tr><td><b>Temperature 0.3</b></td><td>Low randomness, so the same question gets close to the same answer every time.</td></tr>
+      <tr><td><b>Low "thinking"</b></td><td>The model spends less time reasoning before it answers. That cut replies from 25–45 seconds to about 8 seconds, and the answers still passed every test.</td></tr>
+      <tr><td><b>Answer format</b></td><td>The model must reply in JSON, so the page can always find the answer, the sources, and the handoff.</td></tr>
+      <tr><td><b>Time limits</b></td><td>Each model gets up to 20 seconds and the whole request up to 55 seconds. If the free service is busy, the page tries once more before showing an error.</td></tr>
+      <tr><td><b>Limits per visitor</b></td><td>30 questions per hour, so one person can't use up the free quota.</td></tr>
+    </tbody></table></div>
+    <p class="small muted" style="margin:10px 0 0">The key for the AI service is stored as a Vercel environment variable on the server. It never reaches your browser.</p>
+  </div>
 
   <h2 style="margin:40px 0 14px">The chatbot's rules</h2>
   <ol class="rules">

@@ -18,7 +18,7 @@
 - **Part 2 report:** "Know Your Bill NOLA — Part 2" doc, https://claude.ai/artifact/MPN557EobZ4EGGcejoG7rR
 - **Site pages:**
   - `index.html`: the tool (address lookup → big bill number + value→taxable→bill strip → "Things to check" → neighborhood compare → chat → contacts).
-  - "Behind the data" section: `data.html` (6 interactive EDA charts + neighborhood explorer + Excel checks), `dictionary.html` (searchable 115-field dictionary), `matching.html` (method, live matcher demo, 16-address + 4,299-STR tests, Census Geocoder check), `outside-data.html` (STR API + map, Census block groups, sales-ratio study), `testing.html` (14 real bills, 13 test questions, version history), `sources.html` (architecture, rules, S1–S20, C1, data sources).
+  - "Behind the data" section: `data.html` (6 interactive EDA charts + neighborhood explorer + Excel checks), `dictionary.html` (searchable 115-field dictionary), `matching.html` (method, live matcher demo, 16-address + 4,299-STR tests, Census Geocoder check), `outside-data.html` (STR API + map, Census block groups, sales-ratio study), `testing.html` (14 real bills, 13 test questions, version history), `sources.html` (architecture, how the AI model works, rules, S1–S20, C1, data sources).
   - Shared `assets/site.css` (design tokens) and `assets/site.js` (header, footer, bigger-text toggle, `KYB.nice()` address title-casing).
   - Data: `data/b_*.json` (roll buckets; 2026 fields 0–22, 2027 fields 23–26, block group 27), `data/nbhd.json`, `data/bg.json` (Census block groups), `data/eda.json` (chart data incl. 2026→2027 and sales ratio, STR points), `data/project.json` (dictionary, match tests, bill check, geocoder sample).
 - **Privacy rule for public pages:** owner names, contact names, and mailing addresses never appear, including in data dictionary examples (redacted in `project.json`).
@@ -664,3 +664,4 @@ estimate = main + policeFire
   - Fixed leftover wording that called 2027 a reassessment roll (Topic B, rule 10, S12 label).
   - Layers 1–2 marked live; Layer 3 marked partly live.
   - Ran test questions 11–13 and the demo trio (general question, property lookup, refusal/handoff) on the live site; results on `testing.html`.
+- **Nov 18, 2026** — Added a "How the AI model works" section to `sources.html`: the 4-step request flow, what the model sees about a home (P1/P2/P3/C1), what it can't do, and model settings (Gemini fallbacks, temperature 0.3, low thinking, JSON output, time limits, rate limit).
